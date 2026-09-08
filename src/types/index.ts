@@ -69,7 +69,10 @@ export interface Customer {
 
 export interface Contact {
   id: string;
-  customerId: string;
+  /** Cliente já convertido. Um Contact pertence a um Customer ou a um Account (Sales), nunca nenhum dos dois. */
+  customerId?: string;
+  /** Account (Sales Operations) ainda não convertido em Customer. */
+  accountId?: string;
   name: string;
   email: string;
   role?: string;
@@ -163,7 +166,7 @@ export interface SLA {
 export interface Task {
   id: string;
   title: string;
-  relatedType: "customer" | "ticket" | "conversation" | "workflow";
+  relatedType: "customer" | "ticket" | "conversation" | "workflow" | "lead" | "account" | "deal";
   relatedId: string;
   assigneeId: string;
   status: "new" | "todo" | "in_progress" | "review" | "done" | "canceled";
@@ -190,12 +193,16 @@ export interface Event {
 
 // ---------- AI / Agents ----------
 
+/** Módulo dono do recurso. Ausente = Platform Core / Customer Operations (v1). */
+export type ModuleKey = "customer_operations" | "sales_operations";
+
 export interface Tool {
   id: string;
   key: string;
   name: string;
   description: string;
   riskLevel: "low" | "medium" | "high";
+  module?: ModuleKey;
 }
 
 export type PolicyAction = "ai_can_execute" | "human_approval" | "finance_approval" | "never_execute";
@@ -227,6 +234,7 @@ export interface Agent {
   toolIds: string[];
   policyIds: string[];
   autonomyLevel: AutonomyLevel;
+  module?: ModuleKey;
 }
 
 export type AgentRunStepType = "retrieval" | "reasoning" | "tool_call" | "decision" | "message" | "approval";
@@ -299,6 +307,7 @@ export interface Workflow {
   successRuns: number;
   failedRuns: number;
   waitingRuns: number;
+  module?: ModuleKey;
 }
 
 export type WorkflowNodeType =
@@ -462,4 +471,127 @@ export interface FileAttachment {
   kind: "pdf" | "image" | "doc" | "sheet" | "other";
   uploadedById: string;
   createdAt: string;
+}
+
+// ---------- Sales Operations ----------
+
+export type ICPTier = "ideal" | "good" | "poor";
+export type LeadSource = "website" | "referral" | "outbound" | "event" | "import" | "partner";
+export type LeadStatus = "new" | "contacted" | "qualified" | "disqualified" | "converted";
+
+export interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  company: string;
+  title?: string;
+  source: LeadSource;
+  status: LeadStatus;
+  leadScore: number; // 0-100
+  scoreReasons: string[];
+  icpFit: ICPTier;
+  ownerId?: string;
+  /** Preenchido depois que o lead é qualificado e convertido em Account/Deal. */
+  accountId?: string;
+  createdAt: string;
+}
+
+export type AccountStatus = "prospecting" | "qualifying" | "active_deal" | "customer" | "lost" | "churned";
+
+export interface Account {
+  id: string;
+  name: string;
+  domain: string;
+  industry: string;
+  employeeCount?: number;
+  annualRevenueCents?: number;
+  icpFitScore: number; // 0-100
+  icpTier: ICPTier;
+  ownerId: string;
+  status: AccountStatus;
+  /** Vincula ao Customer real (core) quando o account fechou como cliente. */
+  convertedCustomerId?: string;
+  enrichedAt?: string;
+  tags: string[];
+  createdAt: string;
+}
+
+export interface PipelineStage {
+  id: string;
+  name: string;
+  order: number;
+  defaultProbability: number; // 0-100
+}
+
+export type DealStatus = "open" | "won" | "lost";
+export type RiskLevel = "low" | "medium" | "high";
+
+export interface Deal {
+  id: string;
+  name: string;
+  accountId: string;
+  stageId: string;
+  amountCents: number;
+  probability: number; // 0-100
+  expectedCloseDate: string;
+  ownerId: string;
+  status: DealStatus;
+  riskLevel: RiskLevel;
+  riskReasons: string[];
+  recommendedAction?: string;
+  lastActivityAt: string;
+  createdAt: string;
+  closedAt?: string;
+}
+
+export type InteractionType = "email" | "meeting" | "call";
+
+export interface InteractionAIAnalysis {
+  sentiment: "positive" | "neutral" | "negative";
+  intent: string;
+  engagementScore: number; // 0-100
+  nextStepSuggested?: string;
+}
+
+export interface Interaction {
+  id: string;
+  accountId: string;
+  dealId?: string;
+  contactId?: string;
+  type: InteractionType;
+  direction: "inbound" | "outbound";
+  subject?: string;
+  summary: string;
+  aiAnalysis?: InteractionAIAnalysis;
+  occurredAt: string;
+}
+
+export type SignalType =
+  | "no_response"
+  | "competitor_mentioned"
+  | "champion_left"
+  | "budget_confirmed"
+  | "pricing_page_visited"
+  | "meeting_no_show"
+  | "decision_maker_engaged"
+  | "positive_buying_intent";
+
+export interface Signal {
+  id: string;
+  accountId: string;
+  dealId?: string;
+  type: SignalType;
+  detectedAt: string;
+  detail?: string;
+  impact: "positive" | "negative";
+}
+
+export type ProposalStatus = "draft" | "sent" | "viewed" | "accepted" | "rejected";
+
+export interface Proposal {
+  id: string;
+  dealId: string;
+  status: ProposalStatus;
+  valueCents: number;
+  sentAt?: string;
 }

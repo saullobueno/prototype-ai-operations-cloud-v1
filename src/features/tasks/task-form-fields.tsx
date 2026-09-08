@@ -3,7 +3,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { conversations, customers, tickets, users, workflows } from "@/data/mock";
+import { accounts, conversations, customers, deals, leads, tickets, users, workflows } from "@/data/mock";
 import type { Task } from "@/types";
 
 export type RelatedType = Task["relatedType"];
@@ -13,6 +13,9 @@ export const RELATED_TYPE_LABEL: Record<RelatedType, string> = {
   ticket: "Ticket",
   conversation: "Conversa",
   workflow: "Workflow",
+  lead: "Lead",
+  account: "Account",
+  deal: "Deal",
 };
 
 // A ordem reflete o fluxo esperado: criada -> aprovada -> em execução -> em revisão -> aprovada pelo supervisor.
@@ -35,6 +38,12 @@ export function relatedOptions(type: RelatedType) {
       return conversations.map((c) => ({ id: c.id, label: c.subject }));
     case "workflow":
       return workflows.map((w) => ({ id: w.id, label: w.name }));
+    case "lead":
+      return leads.map((l) => ({ id: l.id, label: `${l.name} (${l.company})` }));
+    case "account":
+      return accounts.map((a) => ({ id: a.id, label: a.name }));
+    case "deal":
+      return deals.map((d) => ({ id: d.id, label: d.name }));
   }
 }
 

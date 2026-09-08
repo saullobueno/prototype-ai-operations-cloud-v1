@@ -77,7 +77,7 @@ Prepara conceitualmente multi-tenancy, ambientes (produção/sandbox) e contas E
 MODULES
 
 ● Customer Operations   (Active)
-○ Sales Operations      (Coming soon)
+● Sales Operations      (Active — Overview/Leads/Accounts/Deals/Forecast em sub-sidebar próprio)
 ○ Finance Operations    (Coming soon)
 ○ Business Operations   (Coming soon)
 ─────────────────────────
@@ -90,6 +90,7 @@ Regras de comportamento:
 - Item ativo tem indicador visual (barra lateral colorida + fundo sutil).
 - Grupos com submenu (`Operations`, `AI`, `Automation`) expandem/colapsam; o grupo do item ativo abre automaticamente.
 - Itens em "Coming soon" são clicáveis e levam a uma tela de placeholder (`Module Coming Soon`, ver `05-telas/00-core.md`) — não devem ficar desabilitados/cinza sem interação, pois isso é parte de comunicar a visão da plataforma.
+- Sales Operations é o segundo módulo ativo (ver `05-telas/07-sales-operations.md`). Como usa `SecondarySidebarLayout` (mesmo padrão de Settings/Admin), o item no sidebar principal aponta para `/modules/sales` e a navegação entre Overview/Leads/Accounts/Deals/Forecast acontece dentro do próprio módulo, não no sidebar global.
 - `Admin` só aparece para o usuário logado com role `Owner` ou `Admin`.
 
 ## 4. Header
@@ -184,7 +185,14 @@ Convenção: App Router (Next.js) com grupo de rotas autenticadas `(app)`.
 
 (app)/quality                                 → AI Quality, Human Quality, Reviews, Coaching
 
-(app)/modules/sales                           → placeholder "Coming soon"
+(app)/modules/sales                           → Sales Operations — Overview (KPIs, deals em risco, sinais recentes)
+(app)/modules/sales/leads                     → lista de leads
+(app)/modules/sales/leads/[leadId]            → detalhe do lead (score, enrichment, qualificar e converter)
+(app)/modules/sales/accounts                  → lista de accounts
+(app)/modules/sales/accounts/[accountId]      → Account 360 (tabs: overview|contacts|interactions|deals|signals|revenue-graph|timeline)
+(app)/modules/sales/deals                     → deals — toggle lista / pipeline (board Kanban)
+(app)/modules/sales/deals/[dealId]            → detalhe do deal (Deal Risk panel, proposta, interações)
+(app)/modules/sales/forecast                  → Revenue Analytics (pipeline por estágio, forecast, win rate)
 (app)/modules/finance                         → placeholder "Coming soon"
 (app)/modules/business                        → placeholder "Coming soon"
 

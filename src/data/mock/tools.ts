@@ -12,4 +12,13 @@ export const tools: Tool[] = [
   { id: "tool_delete_account", key: "delete_account", name: "Excluir conta", description: "Exclui permanentemente a conta de um cliente.", riskLevel: "high" },
   { id: "tool_update_knowledge", key: "update_knowledge", name: "Atualizar conhecimento", description: "Cria ou edita um documento da base de conhecimento.", riskLevel: "medium" },
   { id: "tool_trigger_export", key: "trigger_export", name: "Disparar exportação de dados", description: "Inicia um job de exportação de dados para um cliente.", riskLevel: "medium" },
+
+  // ---------- Sales Operations ----------
+  { id: "tool_enrich_company", key: "enrich_company", name: "Enriquecer empresa", description: "Busca dados públicos (porte, setor, receita estimada) para enriquecer um Account.", riskLevel: "low", module: "sales_operations" },
+  { id: "tool_calculate_lead_score", key: "calculate_lead_score", name: "Calcular lead score", description: "Calcula o score de um lead com base em fit de ICP, cargo e engajamento.", riskLevel: "low", module: "sales_operations" },
+  { id: "tool_analyze_interaction", key: "analyze_interaction", name: "Analisar interação", description: "Analisa sentimento, intenção e engajamento de um e-mail, reunião ou call.", riskLevel: "low", module: "sales_operations" },
+  { id: "tool_detect_deal_risk", key: "detect_deal_risk", name: "Detectar risco de deal", description: "Avalia sinais de um deal e retorna nível de risco, razões e ação recomendada.", riskLevel: "medium", module: "sales_operations" },
+  { id: "tool_predict_close_probability", key: "predict_close_probability", name: "Prever probabilidade de fechamento", description: "Estima a probabilidade de fechamento de um deal com base no histórico e nos sinais.", riskLevel: "low", module: "sales_operations" },
+  { id: "tool_generate_proposal", key: "generate_proposal", name: "Gerar proposta", description: "Gera uma proposta comercial em rascunho a partir dos dados do deal.", riskLevel: "medium", module: "sales_operations" },
+  { id: "tool_draft_follow_up", key: "draft_follow_up", name: "Redigir follow-up", description: "Redige um e-mail de follow-up personalizado para um contato ou deal.", riskLevel: "low", module: "sales_operations" },
 ];

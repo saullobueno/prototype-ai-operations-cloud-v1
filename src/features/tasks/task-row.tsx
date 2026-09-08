@@ -19,6 +19,9 @@ const RELATED_HREF: Record<Task["relatedType"], (id: string) => string> = {
   ticket: (id) => `/tickets/${id}`,
   conversation: (id) => `/inbox/${id}`,
   workflow: (id) => `/automation/workflows/${id}`,
+  lead: (id) => `/modules/sales/leads/${id}`,
+  account: (id) => `/modules/sales/accounts/${id}`,
+  deal: (id) => `/modules/sales/deals/${id}`,
 };
 
 const RELATED_LABEL: Record<Task["relatedType"], string> = {
@@ -26,6 +29,9 @@ const RELATED_LABEL: Record<Task["relatedType"], string> = {
   ticket: "ticket",
   conversation: "conversa",
   workflow: "workflow",
+  lead: "lead",
+  account: "account",
+  deal: "deal",
 };
 
 interface TaskRowProps {

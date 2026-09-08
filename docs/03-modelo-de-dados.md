@@ -70,7 +70,8 @@ Workflow, WorkflowVersion, WorkflowRun, WorkflowStep,
 KnowledgeSource, KnowledgeDocument,
 Integration, Channel, Notification,
 SLA, Approval, AuditLog,
-Evaluation
+Evaluation,
+Lead, Account, PipelineStage, Deal, Interaction, Signal, Proposal
 ```
 
 ## 4. Tipos TypeScript de referência
@@ -441,6 +442,121 @@ interface AuditLog {
 }
 ```
 
+## 4.1 Sales Operations (segundo módulo)
+
+Entidades específicas de Sales Operations — reutilizam `Task`, `Activity`, `Event`, `Agent`, `Tool`, `Workflow`, `Notification`, `AuditLog` do core; `Contact` foi generalizado para pertencer a um `Customer` **ou** a um `Account`.
+
+```typescript
+// ---------- Sales Operations ----------
+
+export type ICPTier = "ideal" | "good" | "poor";
+
+export interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  company: string;
+  title?: string;
+  source: "website" | "referral" | "outbound" | "event" | "import" | "partner";
+  status: "new" | "contacted" | "qualified" | "disqualified" | "converted";
+  leadScore: number;               // 0-100
+  scoreReasons: string[];
+  icpFit: ICPTier;
+  ownerId?: string;
+  accountId?: string;              // preenchido após conversão em Account/Deal
+  createdAt: string;
+}
+
+export interface Account {
+  id: string;
+  name: string;
+  domain: string;
+  industry: string;
+  employeeCount?: number;
+  annualRevenueCents?: number;
+  icpFitScore: number;             // 0-100
+  icpTier: ICPTier;
+  ownerId: string;
+  status: "prospecting" | "qualifying" | "active_deal" | "customer" | "lost" | "churned";
+  convertedCustomerId?: string;    // vincula ao Customer real (core) quando o account fecha como cliente
+  enrichedAt?: string;
+  tags: string[];
+  createdAt: string;
+}
+
+export interface PipelineStage {
+  id: string;
+  name: string;                    // Qualification | Discovery | Proposal | Negotiation | Closed Won | Closed Lost
+  order: number;
+  defaultProbability: number;
+}
+
+export interface Deal {
+  id: string;
+  name: string;
+  accountId: string;
+  stageId: string;
+  amountCents: number;
+  probability: number;             // 0-100
+  expectedCloseDate: string;
+  ownerId: string;
+  status: "open" | "won" | "lost";
+  riskLevel: "low" | "medium" | "high";
+  riskReasons: string[];
+  recommendedAction?: string;
+  lastActivityAt: string;
+  createdAt: string;
+  closedAt?: string;
+}
+
+export interface Interaction {
+  id: string;
+  accountId: string;
+  dealId?: string;
+  contactId?: string;
+  type: "email" | "meeting" | "call";
+  direction: "inbound" | "outbound";
+  subject?: string;
+  summary: string;
+  aiAnalysis?: {
+    sentiment: "positive" | "neutral" | "negative";
+    intent: string;
+    engagementScore: number;       // 0-100
+    nextStepSuggested?: string;
+  };
+  occurredAt: string;
+}
+
+export interface Signal {
+  id: string;
+  accountId: string;
+  dealId?: string;
+  type: "no_response" | "competitor_mentioned" | "champion_left" | "budget_confirmed"
+      | "pricing_page_visited" | "meeting_no_show" | "decision_maker_engaged" | "positive_buying_intent";
+  detectedAt: string;
+  detail?: string;
+  impact: "positive" | "negative";
+}
+
+export interface Proposal {
+  id: string;
+  dealId: string;
+  status: "draft" | "sent" | "viewed" | "accepted" | "rejected";
+  valueCents: number;
+  sentAt?: string;
+}
+```
+
+**O Revenue Graph:** a mesma lógica do Operations Graph (§2), aplicada a Sales —
+
+```text
+Account → Contact → Interaction → Deal → Signal → Intent → Probability → Revenue
+```
+
+Renderizado na tab "Revenue Graph" do Account 360 (ver `docs/05-telas/07-sales-operations.md`), interpretado pelo `Deal Risk Agent` para produzir o `riskLevel`/`riskReasons`/`recommendedAction` de cada `Deal` (ver AI Moment #3 em `06-fluxos-e-ai-moments.md`).
+
+**Continuidade com Customer Operations:** 3 `Account`s do dataset mock (`acc_novacorp`, `acc_lumentech`, `acc_vertexlabs`) têm `status: "customer"` e `convertedCustomerId` apontando para um `Customer` já existente (`cus_001`, `cus_004`, `cus_006`) — prova visual de que os dois módulos compartilham o mesmo grafo de dados, não duplicam o conceito de cliente.
+
 ## 5. Relacionamentos-chave (para montar o Customer 360)
 
 ```text
@@ -477,6 +593,9 @@ ticket.created / ticket.assigned / ticket.resolved
 payment.failed / payment.completed
 workflow.started / workflow.completed / workflow.failed
 agent.started / agent.completed / agent.escalated
+lead.created / lead.qualified / account.enriched
+deal.created / deal.stage_changed / deal.won / deal.lost / deal.risk_detected
+signal.detected / proposal.sent
 ```
 
 Esse catálogo alimenta a Timeline do Customer 360, o AI Activity e o Audit Log — três telas diferentes sobre o mesmo tipo de dado.

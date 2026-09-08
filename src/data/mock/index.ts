@@ -32,6 +32,14 @@ export * from "./tasks";
 export * from "./evaluations";
 export * from "./activities";
 export * from "./events";
+export * from "./leads";
+export * from "./accounts";
+export * from "./pipelineStages";
+export * from "./deals";
+export * from "./interactions";
+export * from "./signals";
+export * from "./proposals";
+export * from "./salesAnalyticsSeries";
 
 import { customers } from "./customers";
 import { contacts } from "./contacts";
@@ -52,6 +60,12 @@ import { users } from "./users";
 import { roles } from "./roles";
 import { teams } from "./teams";
 import { evaluations } from "./evaluations";
+import { leads } from "./leads";
+import { accounts } from "./accounts";
+import { deals } from "./deals";
+import { getInteractionsByAccount, getInteractionsByDeal } from "./interactions";
+import { getSignalsByAccount, getSignalsByDeal } from "./signals";
+import { getProposalByDeal } from "./proposals";
 
 // ---------- Customers ----------
 
@@ -162,6 +176,42 @@ export function getRoleById(id: string) {
 export function getTeamById(id: string) {
   return teams.find((t) => t.id === id);
 }
+
+// ---------- Sales Operations ----------
+
+export function getLeadById(id: string) {
+  return leads.find((l) => l.id === id);
+}
+
+export function getAccountById(id: string) {
+  return accounts.find((a) => a.id === id);
+}
+
+export function getDealById(id: string) {
+  return deals.find((d) => d.id === id);
+}
+
+export function getDealsByAccount(accountId: string) {
+  return deals.filter((d) => d.accountId === accountId).sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
+}
+
+export function getContactsByAccount(accountId: string) {
+  return contacts.filter((c) => c.accountId === accountId);
+}
+
+export function getTasksByAccount(accountId: string) {
+  return tasks.filter((t) => t.relatedType === "account" && t.relatedId === accountId);
+}
+
+export function getOpenDeals() {
+  return deals.filter((d) => d.status === "open");
+}
+
+export function getDealsAtRisk() {
+  return deals.filter((d) => d.status === "open" && d.riskLevel === "high");
+}
+
+export { getInteractionsByAccount, getInteractionsByDeal, getSignalsByAccount, getSignalsByDeal, getProposalByDeal };
 
 // ---------- Formatação ----------
 

@@ -88,7 +88,7 @@ export interface ModuleEntry {
 
 export const modulesNav: ModuleEntry[] = [
   { label: "Customer Operations", href: "/overview", icon: Headset, status: "active" },
-  { label: "Sales Operations", href: "/modules/sales", icon: TrendingUp, status: "coming_soon" },
+  { label: "Sales Operations", href: "/modules/sales", icon: TrendingUp, status: "active" },
   { label: "Finance Operations", href: "/modules/finance", icon: Wallet, status: "coming_soon" },
   { label: "Business Operations", href: "/modules/business", icon: Building2, status: "coming_soon" },
 ];

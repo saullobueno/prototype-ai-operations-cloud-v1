@@ -317,7 +317,31 @@ data/mock/
   notifications.ts
   approvals.ts
   auditLogs.ts
+  leads.ts
+  accounts.ts
+  pipelineStages.ts
+  deals.ts
+  interactions.ts
+  signals.ts
+  proposals.ts
+  salesAnalyticsSeries.ts
   index.ts          ← re-exporta tudo + funções helper (getCustomerById, getConversationsByCustomer, etc.)
 ```
 
 Cada arquivo exporta um array tipado (usando as interfaces de `03-modelo-de-dados.md`) e os IDs devem seguir os prefixos usados neste documento (`cus_`, `conv_`, `agent_`, etc.) para rastreabilidade entre specs e implementação.
+
+## 17. Sales Operations — dataset (segundo módulo)
+
+Times/usuários dedicados: `team_sales` (já existia como placeholder) ganha 2 membros — Rafaela Nunes (`usr_rafaela`, Manager) e Diego Farias (`usr_diego`, Agent).
+
+**Accounts (15):** 3 contas convertidas (continuidade com Customer Operations — ver §4 e `03-modelo-de-dados.md` §4.1): `acc_novacorp` → `cus_001`, `acc_lumentech` → `cus_004`, `acc_vertexlabs` → `cus_006`. As demais 12 são prospects novos, sem overlap com os nomes de clientes existentes: 8 com deal ativo (Meridian Freight, Solstice Health, Kepler Robotics, Bluewave Telecom, Granite Retail Group, Aurora FinTech, Nordwind Energy, Silvercrest Media), 2 em qualificação recém-convertidas de lead (Terracotta Hospitality, Vantage Biotech) e 2 perdidas (Palisade Insurance, Copper Valley Foods).
+
+**Leads (10):** mistura de status (`new`/`contacted`/`qualified`/`disqualified`/`converted`) e fontes (`website`/`referral`/`outbound`/`event`/`import`/`partner`). 2 leads já convertidos (`lead_001` → Terracotta Hospitality, `lead_002` → Vantage Biotech) mantêm o mesmo nome/e-mail de contato do Account gerado, para reforçar a continuidade Lead → Account → Contact.
+
+**Pipeline stages (6, fixos):** Qualification → Discovery → Proposal → Negotiation → Closed Won / Closed Lost.
+
+**Deals (22):** 3 `won` (histórico das contas convertidas), 2 `lost`, 17 `open` — destes, 3 com `riskLevel: "high"` (incluindo o deal em destaque do AI Moment #3, `deal_meridian_expansion`: Meridian Freight, €38.000, em `stage_negotiation`, com as 4 razões de risco usadas literalmente no fluxo de "Deal Risk Explain" — ver `06-fluxos-e-ai-moments.md` §3.1), 3 `medium` e o restante `low`.
+
+**Interactions (24) / Signals (18) / Proposals (10):** concentradas nas contas com deal ativo, com ênfase na história de risco da Meridian Freight (3 interações + 3 sinais que constroem exatamente a narrativa exibida no `DealRiskPanel`).
+
+**Agentes/Tools novos:** `agent_sdr` (SDR Agent), `agent_deal_risk` (Deal Risk Agent), `agent_follow_up` (Follow-up Agent) — usam as novas tools `tool_enrich_company`, `tool_calculate_lead_score`, `tool_analyze_interaction`, `tool_detect_deal_risk`, `tool_predict_close_probability`, `tool_generate_proposal`, `tool_draft_follow_up`. Todos marcados com `module: "sales_operations"` e aparecem nas mesmas telas de AI Workforce/Automation usadas por Customer Operations (não há telas de agentes duplicadas para Sales).

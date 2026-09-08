@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import type { AutonomyLevel, CustomerHealth, Priority } from "@/types";
+import type { AutonomyLevel, CustomerHealth, ICPTier, Priority } from "@/types";
 import { Bot, CircleCheck, ShieldAlert, User, UserCheck, UserRoundCog } from "lucide-react";
 
 const dotClass = "size-1.5 rounded-full";
@@ -62,6 +62,21 @@ const STATUS_MAP: Record<string, { label: string; className: string }> = {
   pending_approval: { label: "Aguardando aprovação", className: "bg-warning/15 text-warning-foreground dark:text-warning" },
   approved: { label: "Aprovado", className: "bg-success/15 text-success dark:text-success" },
   rejected: { label: "Rejeitado", className: "bg-danger/15 text-danger" },
+  // ---------- Sales Operations ----------
+  contacted: { label: "Contatado", className: "bg-info/15 text-info" },
+  qualified: { label: "Qualificado", className: "bg-success/15 text-success dark:text-success" },
+  disqualified: { label: "Desqualificado", className: "bg-muted text-muted-foreground" },
+  converted: { label: "Convertido", className: "bg-success/15 text-success dark:text-success" },
+  prospecting: { label: "Prospectando", className: "bg-info/15 text-info" },
+  qualifying: { label: "Qualificando", className: "bg-warning/15 text-warning-foreground dark:text-warning" },
+  active_deal: { label: "Deal ativo", className: "bg-success/15 text-success dark:text-success" },
+  customer: { label: "Cliente", className: "bg-success/15 text-success dark:text-success" },
+  churned: { label: "Churn", className: "bg-danger/15 text-danger" },
+  won: { label: "Ganho", className: "bg-success/15 text-success dark:text-success" },
+  lost: { label: "Perdido", className: "bg-danger/15 text-danger" },
+  sent: { label: "Enviada", className: "bg-info/15 text-info" },
+  viewed: { label: "Visualizada", className: "bg-violet-500/15 text-violet-600 dark:text-violet-400" },
+  accepted: { label: "Aceita", className: "bg-success/15 text-success dark:text-success" },
 };
 
 export function StatusBadge({ status }: { status: string }) {
@@ -119,6 +134,16 @@ export function RiskBadge({ level }: { level: "low" | "medium" | "high" }) {
       {label}
     </span>
   );
+}
+
+export function ICPBadge({ tier }: { tier: ICPTier }) {
+  const map: Record<ICPTier, { label: string; className: string }> = {
+    ideal: { label: "ICP Ideal", className: "bg-success/15 text-success dark:text-success" },
+    good: { label: "ICP Good", className: "bg-info/15 text-info" },
+    poor: { label: "ICP Poor", className: "bg-muted text-muted-foreground" },
+  };
+  const { label, className } = map[tier];
+  return <span className={cn("inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-medium", className)}>{label}</span>;
 }
 
 export function SuccessDot() {

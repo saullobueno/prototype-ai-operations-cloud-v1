@@ -90,6 +90,37 @@ Recommended actions:
 
 **Botões de ação** no final da resposta devem navegar de fato para as telas relevantes (Knowledge, Settings → AI Policies, Automation → Workflows), reforçando que o "insight" sempre termina em uma ação real da plataforma.
 
+## 3.1 AI Moment #3 — "Deal Risk Explain" (Sales Operations)
+
+**Onde:** `(app)/modules/sales/deals` (lista/board) e `(app)/modules/sales/deals/[dealId]` (detalhe).
+
+**Gatilho:** todo deal aberto com `riskLevel: "high"` mostra um badge de risco na lista; abrir o deal exibe o `DealRiskPanel`.
+
+**Exemplo de interação (dado real do dataset mock, `deal_meridian_expansion`):**
+
+```text
+Meridian Freight — Expansão Enterprise
+€38.000
+
+Risk: HIGH
+
+Reasons:
+• 12 dias sem resposta do contato principal
+• Decision maker não engajado nas últimas interações
+• Concorrente mencionado na última reunião
+• Nenhuma reunião agendada
+
+Recommended action: Agendar follow-up executivo
+
+[ Agendar follow-up ]  [ Ver Revenue Graph → ]
+```
+
+**Dados:** `Deal.riskLevel/riskReasons/recommendedAction` (já resolvidos no mock, sem "pensar" ao vivo) + `Signal[]` filtrados por `dealId` (ver `getSignalsByDeal`) para o feed de evidências, + `Interaction[]` filtradas por `dealId` para o histórico que sustenta a explicação.
+
+**Botão "Ver Revenue Graph →":** leva para a tab Revenue Graph do `Account 360` correspondente (`acc_meridianfreight`), reforçando visualmente a cadeia Company → Contacts → Interactions → Deals → Signals → Intent → Probability → Revenue.
+
+**Por que importa:** é o mesmo tipo de momento do AI Moment #1 (Agent + dados + decisão + ação recomendada), mas em Sales — prova que o conceito de "Operations Graph interpretado pela IA" se generaliza para um segundo módulo sem reinventar a arquitetura.
+
 ## 4. Fluxo: aprovação de ação de IA (governança)
 
 Demonstra a filosofia "Human + AI, nunca AI replaces humans".

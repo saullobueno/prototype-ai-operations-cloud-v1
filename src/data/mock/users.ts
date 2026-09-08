@@ -41,6 +41,22 @@ export const users: User[] = [
     teamIds: ["team_platform"],
     status: "active",
   },
+  {
+    id: "usr_rafaela",
+    name: "Rafaela Nunes",
+    email: "rafaela@acmecloud.com",
+    roleId: "role_manager",
+    teamIds: ["team_sales"],
+    status: "active",
+  },
+  {
+    id: "usr_diego",
+    name: "Diego Farias",
+    email: "diego@acmecloud.com",
+    roleId: "role_agent",
+    teamIds: ["team_sales"],
+    status: "active",
+  },
 ];
 
 export const CURRENT_USER_ID = "usr_edivan";
