@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Check, X } from "lucide-react";
+import { ArrowRight, Check, X } from "lucide-react";
+import Link from "next/link";
 import { SettingsSection } from "@/components/layout/settings-section";
 import { KPIStatCard } from "@/components/domain/kpi-stat-card";
-import { PolicyRuleRow } from "@/components/domain/policy-rule-row";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { approvals as approvalsStore, CURRENT_USER_ID, getCustomerById, policies } from "@/data/mock";
@@ -68,16 +68,17 @@ export default function AIGovernancePage() {
       )}
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Políticas ativas</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-base">Políticas ativas</CardTitle>
+          <Button asChild size="sm" variant="outline" className="gap-1">
+            <Link href="/settings/ai">Editar em Configurações <ArrowRight className="size-3.5" /></Link>
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-2">
           {policies.map((p) => (
-            <div key={p.id}>
-              <p className="mb-1.5 text-sm font-medium text-foreground">{p.name}</p>
-              <div className="space-y-1">
-                {p.rules.map((r) => (
-                  <PolicyRuleRow key={r.id} rule={r} />
-                ))}
-              </div>
+            <div key={p.id} className="flex items-center justify-between text-sm">
+              <span className="text-foreground">{p.name}</span>
+              <span className="text-muted-foreground">{p.rules.length} regra(s)</span>
             </div>
           ))}
         </CardContent>

@@ -5,10 +5,12 @@ import Link from "next/link";
 import {
   Activity as ActivityIcon,
   CheckCircle2,
+  Contact as ContactIcon,
   File,
   FileText,
   Image as ImageIcon,
   Inbox,
+  MoreHorizontal,
   Plus,
   Sheet as SheetIcon,
   StickyNote,
@@ -18,20 +20,32 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/domain/empty-state";
 import { EntityAvatar } from "@/components/domain/entity-avatar";
 import { PriorityBadge, StatusBadge } from "@/components/domain/badges";
 import { ClickableTableRow } from "@/components/domain/clickable-table-row";
 import { NewTaskDialog } from "@/features/tasks/new-task-dialog";
 import { TaskRow } from "@/features/tasks/task-row";
+import { ContactFormDialog } from "@/features/customers/contact-form-dialog";
 import { groupActivitiesByDay } from "@/core/activity";
 import { formatCurrency, formatDate, formatDateTime, formatRelative } from "@/lib/format";
 import {
   addFile,
   addNote,
   addTask,
+  deleteContact,
   deleteTask,
   getActivitiesByCustomer,
+  getContactsByCustomer,
   getConversationsByCustomer,
   getCustomerById,
   getFilesByCustomer,
@@ -44,6 +58,7 @@ import {
   updateTask,
   CURRENT_USER_ID,
 } from "@/data/mock";
+import type { Contact } from "@/types";
 
 const HEALTH_LABEL: Record<string, string> = { healthy: "Saudável", at_risk: "Em risco", critical: "Crítico" };
 
@@ -169,6 +184,113 @@ export function ConversationsTab({ customerId }: { customerId: string }) {
           </div>
         </Link>
       ))}
+    </div>
+  );
+}
+
+export function ContactsTab({ customerId }: { customerId: string }) {
+  const [contacts, setContacts] = useState(() => getContactsByCustomer(customerId));
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editContact, setEditContact] = useState<Contact | null>(null);
+  const [deleteCandidate, setDeleteCandidate] = useState<Contact | null>(null);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button size="sm" onClick={() => setCreateOpen(true)}>
+          <Plus /> Novo contato
+        </Button>
+      </div>
+
+      {contacts.length === 0 ? (
+        <EmptyState icon={ContactIcon} title="Nenhum contato ainda" description="Adicione contatos adicionais deste cliente (billing, técnico, etc.)." />
+      ) : (
+        <div className="overflow-hidden rounded-lg border border-border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Função</TableHead>
+                <TableHead className="w-10" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {contacts.map((contact) => (
+                <TableRow key={contact.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-2.5">
+                      <EntityAvatar name={contact.name} size="xs" />
+                      <span className="font-medium text-foreground">{contact.name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{contact.email}</TableCell>
+                  <TableCell className="text-muted-foreground">{contact.role ?? "—"}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon-xs">
+                          <MoreHorizontal />
+                          <span className="sr-only">Ações do contato</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onSelect={() => setEditContact(contact)}>Editar</DropdownMenuItem>
+                        <DropdownMenuItem variant="destructive" onSelect={() => setDeleteCandidate(contact)}>
+                          Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      <ContactFormDialog
+        customerId={customerId}
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onSave={(created) => setContacts((prev) => [...prev, created])}
+      />
+      <ContactFormDialog
+        contact={editContact ?? undefined}
+        customerId={customerId}
+        open={editContact !== null}
+        onOpenChange={(next) => {
+          if (!next) setEditContact(null);
+        }}
+        onSave={(updated) => setContacts((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))}
+      />
+
+      <Dialog open={deleteCandidate !== null} onOpenChange={(next) => !next && setDeleteCandidate(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Excluir contato?</DialogTitle>
+            <DialogDescription>
+              &ldquo;{deleteCandidate?.name}&rdquo; será removido deste cliente. Essa ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteCandidate(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (!deleteCandidate) return;
+                deleteContact(deleteCandidate.id);
+                setContacts((prev) => prev.filter((c) => c.id !== deleteCandidate.id));
+                setDeleteCandidate(null);
+              }}
+            >
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

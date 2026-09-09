@@ -3,7 +3,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { accounts, conversations, customers, deals, leads, tickets, users, workflows } from "@/data/mock";
+import { accounts, candidates, conversations, customers, deals, employees, invoices, leads, processes, tickets, users, vendors, workflows } from "@/data/mock";
 import type { Task } from "@/types";
 
 export type RelatedType = Task["relatedType"];
@@ -16,6 +16,12 @@ export const RELATED_TYPE_LABEL: Record<RelatedType, string> = {
   lead: "Lead",
   account: "Account",
   deal: "Deal",
+  process: "Processo",
+  process_run: "Execução de processo",
+  invoice: "Fatura",
+  vendor: "Fornecedor",
+  employee: "Colaborador",
+  candidate: "Candidato",
 };
 
 // A ordem reflete o fluxo esperado: criada -> aprovada -> em execução -> em revisão -> aprovada pelo supervisor.
@@ -44,6 +50,18 @@ export function relatedOptions(type: RelatedType) {
       return accounts.map((a) => ({ id: a.id, label: a.name }));
     case "deal":
       return deals.map((d) => ({ id: d.id, label: d.name }));
+    case "invoice":
+      return invoices.map((i) => ({ id: i.id, label: `${i.number} — ${customers.find((c) => c.id === i.customerId)?.name ?? i.customerId}` }));
+    case "vendor":
+      return vendors.map((v) => ({ id: v.id, label: v.name }));
+    case "process":
+      return processes.map((p) => ({ id: p.id, label: p.name }));
+    case "employee":
+      return employees.map((e) => ({ id: e.id, label: e.name }));
+    case "candidate":
+      return candidates.map((c) => ({ id: c.id, label: `${c.name} (${c.role})` }));
+    case "process_run":
+      return [];
   }
 }
 

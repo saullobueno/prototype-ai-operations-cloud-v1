@@ -1,18 +1,23 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Building2, Search } from "lucide-react";
+import { Building2, MoreHorizontal, Plus, Search } from "lucide-react";
+import { toast } from "sonner";
 import { PageContainer, PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/domain/empty-state";
 import { EntityAvatar } from "@/components/domain/entity-avatar";
 import { ICPBadge, StatusBadge } from "@/components/domain/badges";
 import { ClickableTableRow } from "@/components/domain/clickable-table-row";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { accounts, getDealsByAccount, getUserById } from "@/data/mock";
+import { AccountFormDialog } from "@/features/sales/account-form-dialog";
+import { accounts, deleteAccount, getDealsByAccount, getUserById } from "@/data/mock";
 import { formatCurrency } from "@/lib/format";
-import type { AccountStatus } from "@/types";
+import type { Account, AccountStatus } from "@/types";
 
 type FilterTab = "all" | "active_deal" | "qualifying" | "customer" | "lost";
 
@@ -33,6 +38,10 @@ function matchesFilter(status: AccountStatus, tab: FilterTab) {
 export default function AccountsPage() {
   const [tab, setTab] = useState<FilterTab>("all");
   const [query, setQuery] = useState("");
+  const [version, setVersion] = useState(0);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editAccount, setEditAccount] = useState<Account | null>(null);
+  const [deleteAccountTarget, setDeleteAccountTarget] = useState<Account | null>(null);
 
   const filtered = useMemo(() => {
     let list = accounts.filter((a) => matchesFilter(a.status, tab));
@@ -41,11 +50,20 @@ export default function AccountsPage() {
       list = list.filter((a) => a.name.toLowerCase().includes(q) || a.industry.toLowerCase().includes(q) || a.domain.toLowerCase().includes(q));
     }
     return list;
-  }, [tab, query]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, query, version]);
 
   return (
     <PageContainer>
-      <PageHeader title="Accounts" description={`${accounts.length} accounts no funil`} />
+      <PageHeader
+        title="Accounts"
+        description={`${accounts.length} accounts no funil`}
+        actions={
+          <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <Plus /> Novo account
+          </Button>
+        }
+      />
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <Tabs value={tab} onValueChange={(v) => setTab(v as FilterTab)}>
@@ -77,6 +95,7 @@ export default function AccountsPage() {
                 <TableHead>Dono</TableHead>
                 <TableHead>Deals abertos</TableHead>
                 <TableHead className="text-right">Pipeline</TableHead>
+                <TableHead className="w-10" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -106,6 +125,22 @@ export default function AccountsPage() {
                     <TableCell className="text-muted-foreground">{owner?.name ?? "—"}</TableCell>
                     <TableCell>{openDeals.length}</TableCell>
                     <TableCell className="text-right font-medium">{formatCurrency(pipelineCents)}</TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon-xs">
+                            <MoreHorizontal />
+                            <span className="sr-only">Ações do account</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onSelect={() => setEditAccount(account)}>Editar</DropdownMenuItem>
+                          <DropdownMenuItem variant="destructive" onSelect={() => setDeleteAccountTarget(account)}>
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
                   </ClickableTableRow>
                 );
               })}
@@ -113,6 +148,45 @@ export default function AccountsPage() {
           </Table>
         </div>
       )}
+
+      <AccountFormDialog open={createOpen} onOpenChange={setCreateOpen} onSave={() => setVersion((v) => v + 1)} />
+      <AccountFormDialog
+        account={editAccount ?? undefined}
+        open={editAccount !== null}
+        onOpenChange={(next) => {
+          if (!next) setEditAccount(null);
+        }}
+        onSave={() => setVersion((v) => v + 1)}
+      />
+
+      <Dialog open={deleteAccountTarget !== null} onOpenChange={(next) => !next && setDeleteAccountTarget(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Excluir account?</DialogTitle>
+            <DialogDescription>
+              &ldquo;{deleteAccountTarget?.name}&rdquo; será removido permanentemente, junto com a referência dos deals associados. Essa ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteAccountTarget(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (deleteAccountTarget) {
+                  deleteAccount(deleteAccountTarget.id);
+                  toast.success("Account excluído", { description: `${deleteAccountTarget.name} foi removido.` });
+                  setDeleteAccountTarget(null);
+                  setVersion((v) => v + 1);
+                }
+              }}
+            >
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageContainer>
   );
 }

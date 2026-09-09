@@ -4,7 +4,7 @@ import { adminNav } from "@/components/navigation/admin-nav-config";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <SecondarySidebarLayout title="Admin" groups={adminNav}>
+    <SecondarySidebarLayout title="Administração" groups={adminNav}>
       {children}
     </SecondarySidebarLayout>
   );

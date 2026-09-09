@@ -100,3 +100,14 @@ export const knowledgeDocuments: KnowledgeDocument[] = [
 export function addKnowledgeDocument(doc: KnowledgeDocument) {
   knowledgeDocuments.push(doc);
 }
+
+export function updateKnowledgeDocument(docId: string, patch: Partial<KnowledgeDocument>) {
+  const doc = knowledgeDocuments.find((d) => d.id === docId);
+  if (doc) Object.assign(doc, patch);
+  return doc;
+}
+
+export function deleteKnowledgeDocument(docId: string) {
+  const index = knowledgeDocuments.findIndex((d) => d.id === docId);
+  if (index !== -1) knowledgeDocuments.splice(index, 1);
+}

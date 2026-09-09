@@ -22,6 +22,12 @@ const RELATED_HREF: Record<Task["relatedType"], (id: string) => string> = {
   lead: (id) => `/modules/sales/leads/${id}`,
   account: (id) => `/modules/sales/accounts/${id}`,
   deal: (id) => `/modules/sales/deals/${id}`,
+  process: (id) => `/modules/business/processes/${id}`,
+  process_run: () => `/modules/business/runs`,
+  invoice: (id) => `/modules/finance/invoices/${id}`,
+  vendor: () => `/modules/finance/vendors`,
+  employee: (id) => `/modules/people/employees/${id}`,
+  candidate: () => `/modules/people/candidates`,
 };
 
 const RELATED_LABEL: Record<Task["relatedType"], string> = {
@@ -32,6 +38,12 @@ const RELATED_LABEL: Record<Task["relatedType"], string> = {
   lead: "lead",
   account: "account",
   deal: "deal",
+  process: "processo",
+  process_run: "execução de processo",
+  invoice: "fatura",
+  vendor: "fornecedor",
+  employee: "colaborador",
+  candidate: "candidato",
 };
 
 interface TaskRowProps {

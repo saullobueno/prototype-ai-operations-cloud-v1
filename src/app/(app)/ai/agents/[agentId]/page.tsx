@@ -1,8 +1,8 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { PageContainer } from "@/components/layout/page-header";
 import { AutonomyBadge, RiskBadge, StatusBadge } from "@/components/domain/badges";
@@ -12,11 +12,13 @@ import { PolicyRuleRow } from "@/components/domain/policy-rule-row";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/domain/clickable-table-row";
 import {
   agents,
+  deleteAgent,
   getAgentRunsByAgent,
   getEvaluationsForTarget,
   knowledgeSources,
@@ -28,9 +30,18 @@ import { formatDateTime } from "@/lib/format";
 import { History } from "lucide-react";
 
 export default function AgentDetailPage({ params }: { params: Promise<{ agentId: string }> }) {
+  const router = useRouter();
   const { agentId } = use(params);
   const agent = agents.find((a) => a.id === agentId);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   if (!agent) notFound();
+
+  function handleDelete() {
+    if (!agent) return;
+    deleteAgent(agent.id);
+    toast.success("Agente excluído", { description: `${agent.name} foi removido do AI Workforce.` });
+    router.push("/ai/agents");
+  }
 
   const runs = getAgentRunsByAgent(agent.id).sort((a, b) => +new Date(b.startedAt) - +new Date(a.startedAt));
   const agentKnowledge = knowledgeSources.filter((k) => agent.knowledgeSourceIds.includes(k.id));
@@ -59,8 +70,30 @@ export default function AgentDetailPage({ params }: { params: Promise<{ agentId:
           >
             {agent.status === "active" ? "Pausar" : "Ativar"}
           </Button>
+          <Button variant="outline" className="text-destructive hover:text-destructive" onClick={() => setConfirmDeleteOpen(true)}>
+            Excluir
+          </Button>
         </div>
       </div>
+
+      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Excluir agente?</DialogTitle>
+            <DialogDescription>
+              &ldquo;{agent.name}&rdquo; será removido permanentemente do AI Workforce. Essa ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Tabs defaultValue="overview">
         <TabsList>

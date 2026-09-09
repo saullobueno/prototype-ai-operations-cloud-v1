@@ -1,12 +1,18 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import Link from "next/link";
-import { notFound, usePathname } from "next/navigation";
+import { notFound, usePathname, useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { MoreHorizontal } from "lucide-react";
 import { PageContainer } from "@/components/layout/page-header";
 import { EntityAvatar } from "@/components/domain/entity-avatar";
 import { ICPBadge, StatusBadge } from "@/components/domain/badges";
-import { getAccountById, getUserById } from "@/data/mock";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AccountFormDialog } from "@/features/sales/account-form-dialog";
+import { deleteAccount, getAccountById, getUserById } from "@/data/mock";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -27,12 +33,23 @@ export default function AccountDetailLayout({
   params: Promise<{ accountId: string }>;
 }) {
   const { accountId } = use(params);
+  const router = useRouter();
+  const [, setVersion] = useState(0);
+  const [editOpen, setEditOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const account = getAccountById(accountId);
   const pathname = usePathname();
 
   if (!account) notFound();
 
   const owner = getUserById(account.ownerId);
+
+  function handleDelete() {
+    if (!account) return;
+    deleteAccount(account.id);
+    toast.success("Account excluído", { description: `${account.name} foi removido.` });
+    router.push("/modules/sales/accounts");
+  }
 
   return (
     <PageContainer>
@@ -59,6 +76,20 @@ export default function AccountDetailLayout({
             <p className="text-muted-foreground">Dono</p>
             <p className="font-medium text-foreground">{owner?.name ?? "—"}</p>
           </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <MoreHorizontal />
+                <span className="sr-only">Ações do account</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => setEditOpen(true)}>Editar</DropdownMenuItem>
+              <DropdownMenuItem variant="destructive" onSelect={() => setConfirmDeleteOpen(true)}>
+                Excluir
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -84,6 +115,27 @@ export default function AccountDetailLayout({
       </div>
 
       {children}
+
+      <AccountFormDialog account={account} open={editOpen} onOpenChange={setEditOpen} onSave={() => setVersion((v) => v + 1)} />
+
+      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Excluir account?</DialogTitle>
+            <DialogDescription>
+              &ldquo;{account.name}&rdquo; será removido permanentemente. Essa ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageContainer>
   );
 }

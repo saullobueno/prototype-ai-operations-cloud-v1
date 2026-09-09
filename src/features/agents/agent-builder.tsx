@@ -12,7 +12,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AutonomyBadge } from "@/components/domain/badges";
-import { knowledgeSources, policies, tools } from "@/data/mock";
+import { addAgent, knowledgeSources, policies, tools, updateAgent } from "@/data/mock";
 import type { Agent, AutonomyLevel } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -87,10 +87,30 @@ export function AgentBuilder({ agent }: { agent?: Agent }) {
   }
 
   function submit() {
-    toast.success(agent ? `${form.name} atualizado` : `${form.name} criado`, {
-      description: "Este protótipo não persiste agentes após recarregar a página.",
-    });
-    router.push(agent ? `/ai/agents/${agent.id}` : "/ai/agents");
+    if (!form.name.trim()) return;
+
+    if (agent) {
+      const updated: Agent = { ...agent, ...form, name: form.name.trim(), description: form.description.trim(), goal: form.goal.trim() };
+      updateAgent(updated);
+      toast.success(`${updated.name} atualizado`, { description: "As alterações foram salvas." });
+      router.push(`/ai/agents/${updated.id}`);
+    } else {
+      const newAgent: Agent = {
+        id: `agent_${Date.now()}`,
+        name: form.name.trim(),
+        description: form.description.trim(),
+        status: "draft",
+        goal: form.goal.trim(),
+        personality: form.personality,
+        knowledgeSourceIds: form.knowledgeSourceIds,
+        toolIds: form.toolIds,
+        policyIds: form.policyIds,
+        autonomyLevel: form.autonomyLevel,
+      };
+      addAgent(newAgent);
+      toast.success(`${newAgent.name} criado`, { description: "O agente foi adicionado ao AI Workforce." });
+      router.push("/ai/agents");
+    }
   }
 
   const current = STEPS[step];

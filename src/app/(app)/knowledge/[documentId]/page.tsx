@@ -2,21 +2,31 @@
 
 import { use, useState } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { PageContainer } from "@/components/layout/page-header";
 import { StatusBadge } from "@/components/domain/badges";
 import { EmptyState } from "@/components/domain/empty-state";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { agents, getKnowledgeDocumentById, getUserById, knowledgeSources } from "@/data/mock";
+import { KnowledgeDocumentFormDialog } from "@/features/knowledge/knowledge-document-form-dialog";
+import { agents, deleteKnowledgeDocument, getKnowledgeDocumentById, getUserById, knowledgeSources } from "@/data/mock";
 import { formatRelative } from "@/lib/format";
 import { History } from "lucide-react";
 
 export default function KnowledgeDocumentPage({ params }: { params: Promise<{ documentId: string }> }) {
   const { documentId } = use(params);
+  const router = useRouter();
   const doc = getKnowledgeDocumentById(documentId);
   if (!doc) notFound();
 
@@ -25,6 +35,11 @@ export default function KnowledgeDocumentPage({ params }: { params: Promise<{ do
 
   const [editing, setEditing] = useState(false);
   const [content, setContent] = useState(doc.content);
+  const [editMetaOpen, setEditMetaOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  // Força o re-render do header após editar os metadados (o objeto é mutado in-place na mesma
+  // referência do array compartilhado — precisamos apenas de um gatilho de re-render).
+  const [, setVersion] = useState(0);
 
   function save() {
     // Persistência simplificada: grava de volta no mock compartilhado para que a
@@ -32,6 +47,12 @@ export default function KnowledgeDocumentPage({ params }: { params: Promise<{ do
     doc!.content = content;
     setEditing(false);
     toast.success("Documento atualizado");
+  }
+
+  function handleDelete() {
+    deleteKnowledgeDocument(doc!.id);
+    toast.success("Documento excluído");
+    router.push("/knowledge");
   }
 
   return (
@@ -47,7 +68,15 @@ export default function KnowledgeDocumentPage({ params }: { params: Promise<{ do
             Fonte: {source?.name} · Atualizado {formatRelative(doc.updatedAt)} · Confiança {doc.confidence}%
           </p>
         </div>
-        <StatusBadge status={doc.status} />
+        <div className="flex items-center gap-2">
+          <StatusBadge status={doc.status} />
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setEditMetaOpen(true)}>
+            <Pencil className="size-3.5" /> Editar
+          </Button>
+          <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:text-destructive" onClick={() => setDeleteOpen(true)}>
+            <Trash2 className="size-3.5" /> Excluir
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="content">
@@ -72,7 +101,7 @@ export default function KnowledgeDocumentPage({ params }: { params: Promise<{ do
                 <pre className="whitespace-pre-wrap break-words font-sans text-sm text-foreground">{content}</pre>
               </div>
               <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setEditing(true)}>
-                <Pencil className="size-3.5" /> Editar
+                <Pencil className="size-3.5" /> Editar conteúdo
               </Button>
             </>
           )}
@@ -98,6 +127,32 @@ export default function KnowledgeDocumentPage({ params }: { params: Promise<{ do
           <p className="text-muted-foreground">v1 — criado</p>
         </TabsContent>
       </Tabs>
+
+      <KnowledgeDocumentFormDialog
+        doc={doc}
+        open={editMetaOpen}
+        onOpenChange={setEditMetaOpen}
+        onSave={() => setVersion((v) => v + 1)}
+      />
+
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Excluir documento?</DialogTitle>
+            <DialogDescription>
+              &ldquo;{doc.title}&rdquo; será removido permanentemente da base de conhecimento. Essa ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageContainer>
   );
 }

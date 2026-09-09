@@ -391,3 +391,8 @@ export function updateDeal(dealId: string, patch: Partial<Deal>) {
   if (deal) Object.assign(deal, patch);
   return deal;
 }
+
+export function deleteDeal(dealId: string) {
+  const idx = deals.findIndex((d) => d.id === dealId);
+  if (idx !== -1) deals.splice(idx, 1);
+}

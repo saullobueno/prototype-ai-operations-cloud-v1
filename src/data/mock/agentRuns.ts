@@ -1,10 +1,11 @@
 import type { AgentRun } from "@/types";
 import { hoursAgo, minutesAgo, daysAgo } from "@/lib/time";
+import { financeAgentRuns } from "./financeAgentRuns";
 
 // Run canônico — referenciado em docs/04-mock-data-acme-cloud.md §11 e no AI Moment #1.
 export const CANONICAL_RUN_ID = "run_84291";
 
-export const agentRuns: AgentRun[] = [
+const coreAgentRuns: AgentRun[] = [
   {
     id: CANONICAL_RUN_ID,
     agentId: "agent_billing",
@@ -114,6 +115,8 @@ export const agentRuns: AgentRun[] = [
     ],
   },
 ];
+
+export const agentRuns: AgentRun[] = [...coreAgentRuns, ...financeAgentRuns];
 
 export function getAgentRunsByAgent(agentId: string): AgentRun[] {
   return agentRuns.filter((r) => r.agentId === agentId);

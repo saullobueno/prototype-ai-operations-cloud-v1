@@ -27,9 +27,10 @@ import {
   updateTask,
 } from "@/data/mock";
 import { escalateTicket, resolveTicket } from "@/features/tickets/ticket-actions";
+import { TicketFormDialog } from "@/features/tickets/ticket-form-dialog";
 import { formatDateTime } from "@/lib/format";
 import type { Task } from "@/types";
-import { ListChecks, MessageSquare } from "lucide-react";
+import { ListChecks, MessageSquare, Pencil } from "lucide-react";
 
 export default function TicketDetailPage({ params }: { params: Promise<{ ticketId: string }> }) {
   const { ticketId } = use(params);
@@ -37,6 +38,10 @@ export default function TicketDetailPage({ params }: { params: Promise<{ ticketI
   const ticket = tickets.find((t) => t.id === ticketId);
   const [status, setStatus] = useState(ticket?.status);
   const [tasks, setTasks] = useState<Task[]>(() => (ticket ? getTasksByRelated("ticket", ticket.id) : []));
+  const [editOpen, setEditOpen] = useState(false);
+  // Força o re-render do header após editar o ticket (o objeto é mutado in-place na mesma
+  // referência do array compartilhado — precisamos apenas de um gatilho de re-render).
+  const [, setVersion] = useState(0);
 
   if (!ticket) notFound();
 
@@ -73,6 +78,9 @@ export default function TicketDetailPage({ params }: { params: Promise<{ ticketI
         <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-xl font-semibold tracking-tight text-foreground">{ticket.title}</h1>
           <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)} className="gap-1.5">
+              <Pencil className="size-3.5" /> Editar
+            </Button>
             <Button variant="outline" size="sm" onClick={handleEscalate}>Escalar</Button>
             <Button size="sm" onClick={handleResolve} disabled={status === "resolved"}>Resolver</Button>
           </div>
@@ -202,6 +210,13 @@ export default function TicketDetailPage({ params }: { params: Promise<{ ticketI
           </TabsContent>
         )}
       </Tabs>
+
+      <TicketFormDialog
+        ticket={ticket}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onSave={() => setVersion((v) => v + 1)}
+      />
     </PageContainer>
   );
 }

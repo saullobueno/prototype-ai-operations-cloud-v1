@@ -16,3 +16,16 @@ export function avg(nums: number[]): number {
   if (nums.length === 0) return 0;
   return Math.round(nums.reduce((a, b) => a + b, 0) / nums.length);
 }
+
+// Evaluations são resultados gerados (por IA ou por revisão humana) — não são criadas/editadas
+// livremente pelo usuário. A única ação real de um revisor é marcar uma revisão pendente como
+// concluída. Muta o objeto in-place (mesma referência do array compartilhado) para que a mudança
+// sobreviva à navegação dentro da sessão — não sobrevive a um reload.
+export function resolveEvaluation(evaluationId: string, reviewerId: string) {
+  const evaluation = evaluations.find((e) => e.id === evaluationId);
+  if (evaluation) {
+    evaluation.resolution = "resolved";
+    evaluation.reviewerId = reviewerId;
+  }
+  return evaluation;
+}

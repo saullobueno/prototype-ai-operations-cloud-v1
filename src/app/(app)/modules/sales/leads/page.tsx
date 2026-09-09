@@ -7,12 +7,14 @@ import { EmptyState } from "@/components/domain/empty-state";
 import { ICPBadge, StatusBadge } from "@/components/domain/badges";
 import { ClickableTableRow } from "@/components/domain/clickable-table-row";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LeadFormDialog } from "@/features/sales/lead-form-dialog";
-import { leads } from "@/data/mock";
+import { toast } from "sonner";
+import { deleteLead, leads } from "@/data/mock";
 import type { Lead, LeadStatus } from "@/types";
 
 type FilterTab = "all" | LeadStatus;
@@ -38,6 +40,7 @@ export default function LeadsPage() {
   const [version, setVersion] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
   const [editLead, setEditLead] = useState<Lead | null>(null);
+  const [deleteLeadTarget, setDeleteLeadTarget] = useState<Lead | null>(null);
 
   const filtered = useMemo(() => {
     let list = leads;
@@ -126,6 +129,9 @@ export default function LeadsPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onSelect={() => setEditLead(lead)}>Editar</DropdownMenuItem>
+                        <DropdownMenuItem variant="destructive" onSelect={() => setDeleteLeadTarget(lead)}>
+                          Excluir
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -145,6 +151,35 @@ export default function LeadsPage() {
         }}
         onSave={() => setVersion((v) => v + 1)}
       />
+
+      <Dialog open={deleteLeadTarget !== null} onOpenChange={(next) => !next && setDeleteLeadTarget(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Excluir lead?</DialogTitle>
+            <DialogDescription>
+              &ldquo;{deleteLeadTarget?.name}&rdquo; será removido permanentemente. Essa ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteLeadTarget(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (deleteLeadTarget) {
+                  deleteLead(deleteLeadTarget.id);
+                  toast.success("Lead excluído", { description: `${deleteLeadTarget.name} foi removido.` });
+                  setDeleteLeadTarget(null);
+                  setVersion((v) => v + 1);
+                }
+              }}
+            >
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageContainer>
   );
 }

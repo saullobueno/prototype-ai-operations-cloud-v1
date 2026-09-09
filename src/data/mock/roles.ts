@@ -39,3 +39,22 @@ export const roles: Role[] = [
   { id: "role_agent", name: "Agent", permissionIds: operationalOnly },
   { id: "role_viewer", name: "Viewer", permissionIds: viewOnly },
 ];
+
+/** Papéis de sistema (fixos, usados no RBAC visual de src/core/permissions) — não podem ser excluídos. */
+export const SYSTEM_ROLE_IDS = ["role_owner", "role_admin", "role_manager", "role_agent", "role_viewer"];
+
+// Persistência simplificada, mesmo padrão de tasks.ts: a tela /admin/roles muta este array
+// compartilhado para que o efeito sobreviva à navegação dentro da sessão — não sobrevive a um reload.
+export function addRole(role: Role) {
+  roles.push(role);
+}
+
+export function updateRole(updated: Role) {
+  const idx = roles.findIndex((r) => r.id === updated.id);
+  if (idx !== -1) roles[idx] = updated;
+}
+
+export function deleteRole(id: string) {
+  const idx = roles.findIndex((r) => r.id === id);
+  if (idx !== -1) roles.splice(idx, 1);
+}

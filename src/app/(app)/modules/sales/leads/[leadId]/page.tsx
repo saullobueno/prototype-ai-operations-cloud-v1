@@ -1,24 +1,38 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import { notFound, useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { MoreHorizontal } from "lucide-react";
 import { PageContainer } from "@/components/layout/page-header";
 import { ICPBadge, StatusBadge } from "@/components/domain/badges";
 import { EntityAvatar } from "@/components/domain/entity-avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { addAccount, addDeal, getLeadById, getUserById, updateLead } from "@/data/mock";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { LeadFormDialog } from "@/features/sales/lead-form-dialog";
+import { addAccount, addDeal, deleteLead, getLeadById, getUserById, updateLead } from "@/data/mock";
 import type { Account, Deal } from "@/types";
 
 export default function LeadDetailPage({ params }: { params: Promise<{ leadId: string }> }) {
   const { leadId } = use(params);
   const router = useRouter();
+  const [, setVersion] = useState(0);
+  const [editOpen, setEditOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const lead = getLeadById(leadId);
 
   if (!lead) notFound();
 
   const owner = lead.ownerId ? getUserById(lead.ownerId) : undefined;
+
+  function handleDelete() {
+    if (!lead) return;
+    deleteLead(lead.id);
+    toast.success("Lead excluído", { description: `${lead.name} foi removido.` });
+    router.push("/modules/sales/leads");
+  }
 
   function handleConvert() {
     if (!lead || lead.status === "converted") return;
@@ -74,9 +88,25 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
             </p>
           </div>
         </div>
-        {lead.status !== "converted" && lead.status !== "disqualified" && (
-          <Button onClick={handleConvert}>Qualificar e converter em Account/Deal</Button>
-        )}
+        <div className="flex items-center gap-2">
+          {lead.status !== "converted" && lead.status !== "disqualified" && (
+            <Button onClick={handleConvert}>Qualificar e converter em Account/Deal</Button>
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <MoreHorizontal />
+                <span className="sr-only">Ações do lead</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => setEditOpen(true)}>Editar</DropdownMenuItem>
+              <DropdownMenuItem variant="destructive" onSelect={() => setConfirmDeleteOpen(true)}>
+                Excluir
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -132,6 +162,27 @@ export default function LeadDetailPage({ params }: { params: Promise<{ leadId: s
           )}
         </CardContent>
       </Card>
+
+      <LeadFormDialog lead={lead} open={editOpen} onOpenChange={setEditOpen} onSave={() => setVersion((v) => v + 1)} />
+
+      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Excluir lead?</DialogTitle>
+            <DialogDescription>
+              &ldquo;{lead.name}&rdquo; será removido permanentemente. Essa ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageContainer>
   );
 }

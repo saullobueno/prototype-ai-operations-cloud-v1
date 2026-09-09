@@ -10,3 +10,19 @@ export const teams: Team[] = [
   { id: "team_finance", name: "Finance", memberIds: [] },
   { id: "team_platform", name: "Platform / Admin", memberIds: ["usr_thomas", "usr_edivan"] },
 ];
+
+// Persistência simplificada, mesmo padrão de tasks.ts: a tela /admin/teams muta este array
+// compartilhado para que o efeito sobreviva à navegação dentro da sessão — não sobrevive a um reload.
+export function addTeam(team: Team) {
+  teams.push(team);
+}
+
+export function updateTeam(updated: Team) {
+  const idx = teams.findIndex((t) => t.id === updated.id);
+  if (idx !== -1) teams[idx] = updated;
+}
+
+export function deleteTeam(id: string) {
+  const idx = teams.findIndex((t) => t.id === id);
+  if (idx !== -1) teams.splice(idx, 1);
+}

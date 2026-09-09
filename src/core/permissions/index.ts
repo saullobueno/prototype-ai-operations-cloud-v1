@@ -7,7 +7,7 @@ import type { RoleName } from "@/types";
  * do usuário logado (usr_edivan, role Owner por padrão, ver docs/07 §2).
  */
 
-export function getCurrentUserRole(): RoleName {
+export function getCurrentUserRole(): string {
   const user = getUserById(CURRENT_USER_ID);
   const role = user ? getRoleById(user.roleId) : undefined;
   return role?.name ?? "Viewer";
@@ -29,9 +29,17 @@ const ROLE_RANK: Record<RoleName, number> = {
   Viewer: 1,
 };
 
+/**
+ * Papéis customizados (criados em /admin/roles) não têm rank fixo — tratamos como rank 0
+ * (mais restritivo que Viewer) até que o produto defina como eles se encaixam na hierarquia.
+ */
+function rankOf(roleName: string): number {
+  return (ROLE_RANK as Record<string, number>)[roleName] ?? 0;
+}
+
 /** true se o role atual tem rank >= ao mínimo exigido (docs/07 §3). */
 export function currentUserAtLeast(minRole: RoleName): boolean {
-  return ROLE_RANK[getCurrentUserRole()] >= ROLE_RANK[minRole];
+  return rankOf(getCurrentUserRole()) >= ROLE_RANK[minRole];
 }
 
 export function canAccessSettings(): boolean {

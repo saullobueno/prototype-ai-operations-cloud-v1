@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { EntityAvatar } from "@/components/domain/entity-avatar";
 import { useAuth } from "@/core/auth/AuthProvider";
+import { getRoleById } from "@/data/mock";
 
 export function UserMenu() {
   const { user, logout } = useAuth();
@@ -21,6 +22,9 @@ export function UserMenu() {
   const router = useRouter();
 
   if (!user) return null;
+
+  const firstName = user.name.split(" ")[0];
+  const role = getRoleById(user.roleId);
 
   return (
     <DropdownMenu>
@@ -33,17 +37,20 @@ export function UserMenu() {
         <DropdownMenuLabel className="flex items-center gap-2 font-normal">
           <EntityAvatar name={user.name} size="sm" />
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-foreground">{user.name}</p>
+            <p className="truncate text-sm text-foreground">
+              <span className="font-bold">{firstName}</span>
+              {role && <span className="italic text-muted-foreground"> · {role.name}</span>}
+            </p>
             <p className="truncate text-xs text-muted-foreground">{user.email}</p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem onClick={() => router.push("/settings")}>
+          <DropdownMenuItem onClick={() => router.push("/profile")}>
             <User /> Perfil
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => router.push("/settings")}>
-            <Settings /> Configurações
+          <DropdownMenuItem onClick={() => router.push("/account")}>
+            <Settings /> Configurações da conta
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

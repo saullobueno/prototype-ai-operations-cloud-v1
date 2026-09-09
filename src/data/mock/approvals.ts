@@ -1,7 +1,10 @@
 import type { Approval } from "@/types";
 import { hoursAgo, minutesAgo } from "@/lib/time";
+import { financeApprovals } from "./financeApprovals";
+import { businessApprovals } from "./businessApprovals";
+import { peopleApprovals } from "./peopleApprovals";
 
-export const approvals: Approval[] = [
+const coreApprovals: Approval[] = [
   {
     id: "appr_1",
     requestedByType: "agent",
@@ -59,6 +62,11 @@ export const approvals: Approval[] = [
     context: "A solicitação de reembolso não atendeu aos critérios da política — o cliente recebeu um crédito de serviço em vez disso.",
   },
 ];
+
+// Cada módulo mantém seu próprio array de Approval (ver docs/IMPLEMENTATION-NOTES.md) — este barrel
+// concatena por referência (não clona), então decidir uma aprovação no array local do módulo
+// (ex.: decideFinanceApproval) também atualiza o objeto aqui.
+export const approvals: Approval[] = [...coreApprovals, ...financeApprovals, ...businessApprovals, ...peopleApprovals];
 
 export function getPendingApprovals(): Approval[] {
   return approvals.filter((a) => a.status === "pending");

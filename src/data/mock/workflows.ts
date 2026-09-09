@@ -1,4 +1,5 @@
 import type { Workflow } from "@/types";
+import { businessWorkflows } from "./businessWorkflows";
 
 // Os 4 primeiros têm WorkflowVersion completa (canvas) em workflowVersions.ts.
 export const FEATURED_WORKFLOW_IDS = ["wf_ticket_triage", "wf_escalation", "wf_sla_escalation", "wf_refund_approval"];
@@ -61,7 +62,7 @@ const extraWorkflows: Workflow[] = extraNames.map((name, i) => {
   };
 });
 
-export const workflows: Workflow[] = [
+const coreWorkflows: Workflow[] = [
   {
     id: "wf_ticket_triage",
     name: "New Ticket Triage",
@@ -73,6 +74,8 @@ export const workflows: Workflow[] = [
     successRuns: 2074,
     failedRuns: 28,
     waitingRuns: 46,
+    isTemplate: true,
+    templateCategory: "Suporte",
   },
   {
     id: "wf_escalation",
@@ -97,6 +100,8 @@ export const workflows: Workflow[] = [
     successRuns: 843,
     failedRuns: 6,
     waitingRuns: 12,
+    isTemplate: true,
+    templateCategory: "Operações",
   },
   {
     id: "wf_refund_approval",
@@ -109,6 +114,8 @@ export const workflows: Workflow[] = [
     successRuns: 551,
     failedRuns: 4,
     waitingRuns: 18,
+    isTemplate: true,
+    templateCategory: "Billing",
   },
   {
     id: "wf_deal_risk_alert",
@@ -139,6 +146,25 @@ export const workflows: Workflow[] = [
   ...extraWorkflows,
 ];
 
+export const workflows: Workflow[] = [...coreWorkflows, ...businessWorkflows];
+
 export function getWorkflow(id: string): Workflow | undefined {
   return workflows.find((w) => w.id === id);
+}
+
+// Persistência simplificada, mesmo padrão de tasks.ts: as telas de criação/edição de workflow
+// (/automation/workflows/new, /automation/workflows/[workflowId]) mutam este array compartilhado
+// para que o efeito sobreviva à navegação dentro da sessão — não sobrevive a um reload.
+export function addWorkflow(workflow: Workflow) {
+  workflows.push(workflow);
+}
+
+export function updateWorkflow(updated: Workflow) {
+  const idx = workflows.findIndex((w) => w.id === updated.id);
+  if (idx !== -1) workflows[idx] = updated;
+}
+
+export function deleteWorkflow(id: string) {
+  const idx = workflows.findIndex((w) => w.id === id);
+  if (idx !== -1) workflows.splice(idx, 1);
 }

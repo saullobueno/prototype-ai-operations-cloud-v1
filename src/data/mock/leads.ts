@@ -153,3 +153,8 @@ export function updateLead(leadId: string, patch: Partial<Lead>) {
   if (lead) Object.assign(lead, patch);
   return lead;
 }
+
+export function deleteLead(leadId: string) {
+  const idx = leads.findIndex((l) => l.id === leadId);
+  if (idx !== -1) leads.splice(idx, 1);
+}

@@ -1,18 +1,32 @@
 "use client";
 
 import Link from "next/link";
-import { Activity as ActivityIcon, Handshake, Mail, Radio, Users } from "lucide-react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
+import { Activity as ActivityIcon, Handshake, Mail, Plus, Radio, Trash2, Users, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState } from "@/components/domain/empty-state";
 import { EntityAvatar } from "@/components/domain/entity-avatar";
 import { ICPBadge, RiskBadge, StatusBadge } from "@/components/domain/badges";
 import { ClickableTableRow } from "@/components/domain/clickable-table-row";
 import { RevenueGraph } from "@/features/sales/revenue-graph";
+import { DealFormDialog } from "@/features/sales/deal-form-dialog";
+import { InteractionFormDialog } from "@/features/sales/interaction-form-dialog";
 import { groupActivitiesByDay } from "@/core/activity";
 import { formatCurrency, formatDate, formatRelative } from "@/lib/format";
-import { getAccountById, getContactsByAccount, getDealsByAccount, getInteractionsByAccount, getSignalsByAccount } from "@/data/mock";
-import type { Activity } from "@/types";
+import {
+  deleteInteraction,
+  deleteSignal,
+  getAccountById,
+  getContactsByAccount,
+  getDealsByAccount,
+  getInteractionsByAccount,
+  getSignalsByAccount,
+} from "@/data/mock";
+import type { Activity, Interaction } from "@/types";
 
 function accountActivities(accountId: string): Activity[] {
   const deals = getDealsByAccount(accountId);
@@ -144,10 +158,20 @@ export function ContactsTab({ accountId }: { accountId: string }) {
 const SENTIMENT_TONE: Record<string, string> = { positive: "text-success", neutral: "text-muted-foreground", negative: "text-danger" };
 
 export function InteractionsTab({ accountId }: { accountId: string }) {
-  const interactions = getInteractionsByAccount(accountId);
-  if (interactions.length === 0) return <EmptyState icon={Mail} title="Nenhuma interação registrada ainda" />;
+  const [version, setVersion] = useState(0);
+  const [logOpen, setLogOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Interaction | null>(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const interactions = useMemo(() => getInteractionsByAccount(accountId), [accountId, version]);
+
   return (
     <div className="space-y-3">
+      <div className="flex justify-end">
+        <Button size="sm" variant="outline" onClick={() => setLogOpen(true)}>
+          <Plus /> Registrar interação
+        </Button>
+      </div>
+      {interactions.length === 0 && <EmptyState icon={Mail} title="Nenhuma interação registrada ainda" />}
       {interactions.map((i) => (
         <Card key={i.id} className="py-3">
           <CardContent className="px-4">
@@ -155,7 +179,13 @@ export function InteractionsTab({ accountId }: { accountId: string }) {
               <p className="text-sm font-medium capitalize text-foreground">
                 {i.type} · {i.subject ?? "Sem assunto"}
               </p>
-              <span className="text-xs text-muted-foreground">{formatRelative(i.occurredAt)}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">{formatRelative(i.occurredAt)}</span>
+                <Button variant="ghost" size="icon-xs" onClick={() => setDeleteTarget(i)}>
+                  <Trash2 />
+                  <span className="sr-only">Excluir interação</span>
+                </Button>
+              </div>
             </div>
             <p className="mt-1 text-sm text-muted-foreground">{i.summary}</p>
             {i.aiAnalysis && (
@@ -168,45 +198,99 @@ export function InteractionsTab({ accountId }: { accountId: string }) {
           </CardContent>
         </Card>
       ))}
+
+      <InteractionFormDialog accountId={accountId} open={logOpen} onOpenChange={setLogOpen} onSave={() => setVersion((v) => v + 1)} />
+
+      <Dialog open={deleteTarget !== null} onOpenChange={(next) => !next && setDeleteTarget(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Excluir interação?</DialogTitle>
+            <DialogDescription>Este registro de interação será removido permanentemente. Essa ação não pode ser desfeita.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (deleteTarget) {
+                  deleteInteraction(deleteTarget.id);
+                  toast.success("Interação excluída");
+                  setDeleteTarget(null);
+                  setVersion((v) => v + 1);
+                }
+              }}
+            >
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
 export function DealsTab({ accountId }: { accountId: string }) {
-  const deals = getDealsByAccount(accountId);
-  if (deals.length === 0) return <EmptyState icon={Handshake} title="Nenhum deal ainda" />;
+  const [version, setVersion] = useState(0);
+  const [createOpen, setCreateOpen] = useState(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const deals = useMemo(() => getDealsByAccount(accountId), [accountId, version]);
+
   return (
-    <div className="overflow-hidden rounded-lg border border-border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Nome</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Risco</TableHead>
-            <TableHead className="text-right">Valor</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {deals.map((d) => (
-            <ClickableTableRow key={d.id} href={`/modules/sales/deals/${d.id}`}>
-              <TableCell className="font-medium">{d.name}</TableCell>
-              <TableCell>
-                <StatusBadge status={d.status} />
-              </TableCell>
-              <TableCell>
-                <RiskBadge level={d.riskLevel} />
-              </TableCell>
-              <TableCell className="text-right font-medium">{formatCurrency(d.amountCents)}</TableCell>
-            </ClickableTableRow>
-          ))}
-        </TableBody>
-      </Table>
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <Button size="sm" variant="outline" onClick={() => setCreateOpen(true)}>
+          <Plus /> Novo deal
+        </Button>
+      </div>
+      {deals.length === 0 ? (
+        <EmptyState icon={Handshake} title="Nenhum deal ainda" />
+      ) : (
+        <div className="overflow-hidden rounded-lg border border-border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Risco</TableHead>
+                <TableHead className="text-right">Valor</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {deals.map((d) => (
+                <ClickableTableRow key={d.id} href={`/modules/sales/deals/${d.id}`}>
+                  <TableCell className="font-medium">{d.name}</TableCell>
+                  <TableCell>
+                    <StatusBadge status={d.status} />
+                  </TableCell>
+                  <TableCell>
+                    <RiskBadge level={d.riskLevel} />
+                  </TableCell>
+                  <TableCell className="text-right font-medium">{formatCurrency(d.amountCents)}</TableCell>
+                </ClickableTableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      <DealFormDialog defaultAccountId={accountId} open={createOpen} onOpenChange={setCreateOpen} onSave={() => setVersion((v) => v + 1)} />
     </div>
   );
 }
 
 export function SignalsTab({ accountId }: { accountId: string }) {
-  const signals = getSignalsByAccount(accountId);
+  const [version, setVersion] = useState(0);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const signals = useMemo(() => getSignalsByAccount(accountId), [accountId, version]);
+
+  function handleDismiss(signalId: string) {
+    deleteSignal(signalId);
+    toast.success("Sinal descartado");
+    setVersion((v) => v + 1);
+  }
+
   if (signals.length === 0) return <EmptyState icon={Radio} title="Nenhum sinal detectado ainda" />;
   return (
     <div className="space-y-2">
@@ -219,6 +303,10 @@ export function SignalsTab({ accountId }: { accountId: string }) {
               <p className="text-xs text-muted-foreground">{s.detail}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">{formatRelative(s.detectedAt)}</p>
             </div>
+            <Button variant="ghost" size="icon-xs" onClick={() => handleDismiss(s.id)}>
+              <X />
+              <span className="sr-only">Descartar sinal</span>
+            </Button>
           </CardContent>
         </Card>
       ))}

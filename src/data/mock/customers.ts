@@ -213,3 +213,8 @@ export function updateCustomer(customerId: string, patch: Partial<Customer>) {
   if (customer) Object.assign(customer, patch);
   return customer;
 }
+
+export function deleteCustomer(customerId: string) {
+  const index = customers.findIndex((c) => c.id === customerId);
+  if (index !== -1) customers.splice(index, 1);
+}

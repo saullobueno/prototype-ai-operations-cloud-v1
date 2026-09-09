@@ -112,6 +112,22 @@ export function ConversationPanel({ conversation }: { conversation: Conversation
     setCreateTicketOpen(true);
   }
 
+  // Persistência simplificada: muta o objeto Conversation diretamente (mesma referência do
+  // array compartilhado) para que a mudança de status/prioridade sobreviva à navegação dentro
+  // da sessão — não sobrevive a um reload. Mesmo padrão de handleResolved/handleEscalated acima.
+  function handleStatusChange(next: ConversationStatus) {
+    conversation.status = next;
+    setStatus(next);
+    if (next === "closed" || next === "resolved") {
+      logActivity(next === "closed" ? "Conversa fechada" : "Conversa marcada como resolvida");
+    }
+  }
+
+  function handlePriorityChange(next: Priority) {
+    conversation.priority = next;
+    setPriority(next);
+  }
+
   const canResolveWithAI = Boolean(conversation.aiAnalysis) && status !== "resolved" && status !== "closed";
 
   return (
@@ -125,7 +141,7 @@ export function ConversationPanel({ conversation }: { conversation: Conversation
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Select value={status} onValueChange={(v) => setStatus(v as ConversationStatus)}>
+          <Select value={status} onValueChange={(v) => handleStatusChange(v as ConversationStatus)}>
             <SelectTrigger size="sm" className="w-[110px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="open">Aberto</SelectItem>
@@ -134,7 +150,7 @@ export function ConversationPanel({ conversation }: { conversation: Conversation
               <SelectItem value="closed">Fechado</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={priority} onValueChange={(v) => setPriority(v as Priority)}>
+          <Select value={priority} onValueChange={(v) => handlePriorityChange(v as Priority)}>
             <SelectTrigger size="sm" className="w-[110px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="low">Baixa</SelectItem>

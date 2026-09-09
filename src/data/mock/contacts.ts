@@ -65,3 +65,21 @@ export const accountContacts: Contact[] = accounts
   );
 
 contacts.push(...accountContacts);
+
+// Persistência simplificada: grava de volta neste array compartilhado para que contatos
+// criados/editados/removidos sobrevivam à navegação dentro da sessão — não sobrevive a um
+// reload. Ver docs/06-fluxos-e-ai-moments.md.
+export function addContact(contact: Contact) {
+  contacts.push(contact);
+}
+
+export function updateContact(contactId: string, patch: Partial<Contact>) {
+  const contact = contacts.find((c) => c.id === contactId);
+  if (contact) Object.assign(contact, patch);
+  return contact;
+}
+
+export function deleteContact(contactId: string) {
+  const index = contacts.findIndex((c) => c.id === contactId);
+  if (index !== -1) contacts.splice(index, 1);
+}

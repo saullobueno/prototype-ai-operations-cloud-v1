@@ -1,13 +1,17 @@
 "use client";
 
+import { useState } from "react";
+import { toast } from "sonner";
 import { ClipboardCheck } from "lucide-react";
 import { PageContainer, PageHeader } from "@/components/layout/page-header";
 import { KPIStatCard } from "@/components/domain/kpi-stat-card";
 import { EmptyState } from "@/components/domain/empty-state";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { agentRuns, agents, avg, evaluations, getUserById } from "@/data/mock";
+import { agentRuns, agents, avg, CURRENT_USER_ID, evaluations as evaluationsStore, getUserById, resolveEvaluation } from "@/data/mock";
+import type { Evaluation } from "@/types";
 
 const RESOLUTION_LABEL: Record<string, string> = {
   resolved: "Resolvido",
@@ -16,8 +20,17 @@ const RESOLUTION_LABEL: Record<string, string> = {
 };
 
 export default function EvaluationsPage() {
+  const [evaluations, setEvaluations] = useState<Evaluation[]>(evaluationsStore);
   const aiEvals = evaluations.filter((e) => e.targetType === "agent_run");
   const humanEvals = evaluations.filter((e) => e.targetType === "conversation");
+
+  function handleResolve(id: string) {
+    const updated = resolveEvaluation(id, CURRENT_USER_ID);
+    if (updated) {
+      setEvaluations((prev) => prev.map((e) => (e.id === id ? { ...updated } : e)));
+      toast.success("Revisão concluída", { description: "A avaliação foi marcada como resolvida." });
+    }
+  }
 
   return (
     <PageContainer>
@@ -119,7 +132,12 @@ export default function EvaluationsPage() {
                 .map((e) => (
                   <Card key={e.id} className="flex-row items-center justify-between px-4 py-3">
                     <span className="text-sm text-foreground">Conversa {e.targetId} sinalizada para revisão</span>
-                    <span className="text-xs text-muted-foreground">Precisão {e.accuracy}%</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-muted-foreground">Precisão {e.accuracy}%</span>
+                      <Button size="sm" variant="outline" onClick={() => handleResolve(e.id)}>
+                        Marcar como resolvida
+                      </Button>
+                    </div>
                   </Card>
                 ))}
             </div>

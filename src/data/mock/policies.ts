@@ -1,6 +1,8 @@
 import type { Policy } from "@/types";
+import { financePolicies } from "./financePolicies";
+import { businessPolicies } from "./businessPolicies";
 
-export const policies: Policy[] = [
+const corePolicies: Policy[] = [
   {
     id: "policy_refund",
     name: "Política de reembolso",
@@ -30,3 +32,21 @@ export const policies: Policy[] = [
     rules: [{ id: "rule_legal_1", condition: "reclamação jurídica ou solicitação de compliance", action: "human_approval" }],
   },
 ];
+
+export const policies: Policy[] = [...corePolicies, ...financePolicies, ...businessPolicies];
+
+// Persistência simplificada, mesmo padrão de tasks.ts: a tela /policies muta este array
+// compartilhado para que o efeito sobreviva à navegação dentro da sessão — não sobrevive a um reload.
+export function addPolicy(policy: Policy) {
+  policies.push(policy);
+}
+
+export function updatePolicy(updated: Policy) {
+  const idx = policies.findIndex((p) => p.id === updated.id);
+  if (idx !== -1) policies[idx] = updated;
+}
+
+export function deletePolicy(id: string) {
+  const idx = policies.findIndex((p) => p.id === id);
+  if (idx !== -1) policies.splice(idx, 1);
+}

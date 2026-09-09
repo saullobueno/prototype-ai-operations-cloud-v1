@@ -20,3 +20,19 @@ export const permissions: Permission[] = [
   { id: "perm_billing_write", key: "billing.write", description: "Gerenciar faturamento e plano" },
   { id: "perm_approvals_write", key: "approvals.write", description: "Aprovar ou rejeitar aprovações pendentes" },
 ];
+
+// Persistência simplificada, mesmo padrão de tasks.ts: a tela /admin/permissions muta este array
+// compartilhado para que o efeito sobreviva à navegação dentro da sessão — não sobrevive a um reload.
+export function addPermission(permission: Permission) {
+  permissions.push(permission);
+}
+
+export function updatePermission(updated: Permission) {
+  const idx = permissions.findIndex((p) => p.id === updated.id);
+  if (idx !== -1) permissions[idx] = updated;
+}
+
+export function deletePermission(id: string) {
+  const idx = permissions.findIndex((p) => p.id === id);
+  if (idx !== -1) permissions.splice(idx, 1);
+}

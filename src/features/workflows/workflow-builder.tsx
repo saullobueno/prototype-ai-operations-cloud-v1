@@ -3,15 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Play, Upload } from "lucide-react";
+import { Play, Trash2, Upload } from "lucide-react";
 import { WorkflowCanvas } from "./workflow-canvas";
 import { NODE_TYPE_LABEL } from "./workflow-node-icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { agents } from "@/data/mock";
-import type { WorkflowEdge, WorkflowNode, WorkflowRunStep, WorkflowStatus } from "@/types";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { addWorkflow, agents, deleteWorkflow, getWorkflowById, updateWorkflow, upsertWorkflowVersion } from "@/data/mock";
+import type { Workflow, WorkflowEdge, WorkflowNode, WorkflowRunStep, WorkflowStatus } from "@/types";
 
 const BLANK_NODES: WorkflowNode[] = [{ id: "n1", type: "trigger", label: "Novo gatilho", position: { x: 240, y: 20 } }];
 
@@ -38,6 +39,7 @@ export function WorkflowBuilder({
   const [selectedNode, setSelectedNode] = useState<WorkflowNode | null>(null);
   const [runSteps, setRunSteps] = useState<WorkflowRunStep[] | undefined>(undefined);
   const [testing, setTesting] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const nodes = initialNodes ?? BLANK_NODES;
   const edges = initialEdges;
@@ -59,8 +61,44 @@ export function WorkflowBuilder({
   }
 
   function publish() {
+    if (!name.trim()) return;
     setStatus("active");
-    toast.success(`${name} publicado`, { description: "Este protótipo não persiste alterações após recarregar a página." });
+
+    if (workflowId) {
+      const existing = getWorkflowById(workflowId);
+      const versionId = `${workflowId}_v${Date.now()}`;
+      upsertWorkflowVersion({ id: versionId, workflowId, version: (existing?.totalRuns ?? 0) > 0 ? 2 : 1, nodes, edges, publishedAt: new Date().toISOString() });
+      if (existing) {
+        updateWorkflow({ ...existing, name: name.trim(), status: "active", currentVersionId: versionId });
+      }
+      toast.success(`${name} publicado`, { description: "As alterações foram salvas." });
+    } else {
+      const id = `wf_${Date.now()}`;
+      const versionId = `${id}_v1`;
+      upsertWorkflowVersion({ id: versionId, workflowId: id, version: 1, nodes, edges, publishedAt: new Date().toISOString() });
+      const newWorkflow: Workflow = {
+        id,
+        name: name.trim(),
+        description: "",
+        status: "active",
+        trigger: { type: "manual" },
+        currentVersionId: versionId,
+        totalRuns: 0,
+        successRuns: 0,
+        failedRuns: 0,
+        waitingRuns: 0,
+      };
+      addWorkflow(newWorkflow);
+      toast.success(`${name} publicado`, { description: "O workflow foi criado." });
+      router.push(`/automation/workflows/${id}`);
+    }
+  }
+
+  function handleDelete() {
+    if (!workflowId) return;
+    deleteWorkflow(workflowId);
+    toast.success("Workflow excluído", { description: `${name} foi removido.` });
+    router.push("/automation/workflows");
   }
 
   return (
@@ -78,12 +116,36 @@ export function WorkflowBuilder({
             <Upload className="size-3.5" /> Publicar
           </Button>
           {workflowId && (
-            <Button variant="ghost" size="sm" onClick={() => router.push(`/automation/workflows/${workflowId}/runs`)}>
-              Ver execuções
-            </Button>
+            <>
+              <Button variant="ghost" size="sm" onClick={() => router.push(`/automation/workflows/${workflowId}/runs`)}>
+                Ver execuções
+              </Button>
+              <Button variant="ghost" size="sm" className="gap-1.5 text-destructive hover:text-destructive" onClick={() => setConfirmDeleteOpen(true)}>
+                <Trash2 className="size-3.5" /> Excluir
+              </Button>
+            </>
           )}
         </div>
       </div>
+
+      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Excluir workflow?</DialogTitle>
+            <DialogDescription>
+              &ldquo;{name}&rdquo; será removido permanentemente. Essa ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_280px]">
         <WorkflowCanvas nodes={nodes} edges={edges} runSteps={runSteps} onNodeSelect={setSelectedNode} selectedNodeId={selectedNode?.id ?? null} />

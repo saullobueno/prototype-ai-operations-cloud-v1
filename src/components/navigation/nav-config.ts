@@ -1,33 +1,34 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Activity,
-  BadgeCheck,
   BarChart3,
-  Bot,
   BookOpen,
   Building2,
-  ClipboardCheck,
+  CheckCircle2,
   Headset,
-  History,
-  Inbox,
   LayoutDashboard,
-  LayoutTemplate,
   ListChecks,
-  MessageSquareText,
+  Plug,
+  Radio,
+  ScrollText,
   Settings,
   ShieldCheck,
   Sparkles,
-  Ticket,
   TrendingUp,
-  Users,
+  UsersRound,
   Wallet,
   Workflow,
 } from "lucide-react";
+import { businessNav } from "@/components/navigation/business-nav-config";
+import { salesNav } from "@/components/navigation/sales-nav-config";
+import { financeNav } from "@/components/navigation/finance-nav-config";
+import { peopleNav } from "@/components/navigation/people-nav-config";
 
 export interface NavLeaf {
   label: string;
   href: string;
-  icon: LucideIcon;
+  /** Opcional para itens dentro de um NavGroup — a linha vertical do accordion já indica a hierarquia, ícone vira redundante. */
+  icon?: LucideIcon;
 }
 
 export interface NavGroup {
@@ -42,57 +43,86 @@ export function isNavGroup(entry: NavEntry): entry is NavGroup {
   return "items" in entry;
 }
 
-export const primaryNav: NavEntry[] = [
-  { label: "Visão geral", href: "/overview", icon: LayoutDashboard },
+/** Item fixo no topo da sidebar, fora de qualquer seção — a home cross-módulo. */
+export const commandCenterItem: NavLeaf = { label: "Painel", href: "/overview", icon: LayoutDashboard };
+
+export interface ModuleSubGroup {
+  label: string;
+  items: { label: string; href: string }[];
+}
+
+export interface OperationsModule {
+  key: string;
+  label: string;
+  icon: LucideIcon;
+  status: "active" | "coming_soon";
+  /** Rota usada quando o módulo está recolhido (modo ícone) ou como fallback de "home" do módulo. */
+  homeHref: string;
+  groups: ModuleSubGroup[];
+}
+
+/** Seção OPERATIONS — um módulo de domínio por accordion, reaproveitando os *-nav-config.ts de cada módulo. */
+export const operationsModules: OperationsModule[] = [
   {
-    label: "Operações",
-    icon: Inbox,
-    items: [
-      { label: "Caixa de entrada", href: "/inbox", icon: Inbox },
-      { label: "Tickets", href: "/tickets", icon: Ticket },
-      { label: "Tarefas", href: "/tasks", icon: ListChecks },
-      { label: "Atividade", href: "/activity", icon: Activity },
+    key: "customer",
+    label: "Customer Operations",
+    icon: Headset,
+    status: "active",
+    homeHref: "/modules/customer",
+    groups: [
+      {
+        label: "",
+        items: [
+          { label: "Visão geral", href: "/modules/customer" },
+          { label: "Inbox", href: "/inbox" },
+          { label: "Customers", href: "/customers" },
+          { label: "Tickets", href: "/tickets" },
+          { label: "Qualidade", href: "/quality" },
+        ],
+      },
     ],
   },
-  { label: "Clientes", href: "/customers", icon: Users },
+  { key: "business", label: "Business Operations", icon: Building2, status: "active", homeHref: "/modules/business", groups: businessNav },
+  { key: "sales", label: "Sales Operations", icon: TrendingUp, status: "active", homeHref: "/modules/sales", groups: salesNav },
+  { key: "finance", label: "Finance Operations", icon: Wallet, status: "active", homeHref: "/modules/finance", groups: financeNav },
+  { key: "people", label: "People Operations", icon: UsersRound, status: "active", homeHref: "/modules/people", groups: peopleNav },
+];
+
+/** Seção INTELLIGENCE — capacidades compartilhadas por todos os módulos acima. */
+export const intelligenceNav: NavEntry[] = [
   {
-    label: "IA",
+    label: "AI Workforce",
     icon: Sparkles,
     items: [
-      { label: "Agentes", href: "/ai/agents", icon: Bot },
-      { label: "Copiloto", href: "/ai/copilot", icon: MessageSquareText },
-      { label: "Avaliações", href: "/ai/evaluations", icon: ClipboardCheck },
-      { label: "Atividade de IA", href: "/ai/activity", icon: Activity },
+      { label: "Agentes", href: "/ai/agents" },
+      { label: "Atividade de IA", href: "/ai/activity" },
+      { label: "Avaliações", href: "/ai/evaluations" },
+      { label: "Copiloto", href: "/ai/copilot" },
     ],
   },
   {
     label: "Automação",
     icon: Workflow,
     items: [
-      { label: "Workflows", href: "/automation/workflows", icon: Workflow },
-      { label: "Execuções", href: "/automation/runs", icon: History },
-      { label: "Modelos", href: "/automation/templates", icon: LayoutTemplate },
+      { label: "Workflows", href: "/automation/workflows" },
+      { label: "Execuções", href: "/automation/runs" },
+      { label: "Modelos", href: "/automation/templates" },
     ],
   },
   { label: "Base de conhecimento", href: "/knowledge", icon: BookOpen },
   { label: "Analytics", href: "/analytics", icon: BarChart3 },
-  { label: "Qualidade", href: "/quality", icon: BadgeCheck },
 ];
 
-export interface ModuleEntry {
-  label: string;
-  href: string;
-  icon: LucideIcon;
-  status: "active" | "coming_soon";
-}
-
-export const modulesNav: ModuleEntry[] = [
-  { label: "Customer Operations", href: "/overview", icon: Headset, status: "active" },
-  { label: "Sales Operations", href: "/modules/sales", icon: TrendingUp, status: "active" },
-  { label: "Finance Operations", href: "/modules/finance", icon: Wallet, status: "coming_soon" },
-  { label: "Business Operations", href: "/modules/business", icon: Building2, status: "coming_soon" },
+/** Seção PLATFORM — primitivas operacionais cross-módulo (Task/Approval/Activity/Event/Policy/Integration). */
+export const platformNav: NavLeaf[] = [
+  { label: "Tarefas", href: "/tasks", icon: ListChecks },
+  { label: "Aprovações", href: "/approvals", icon: CheckCircle2 },
+  { label: "Atividade", href: "/activity", icon: Activity },
+  { label: "Eventos", href: "/events", icon: Radio },
+  { label: "Políticas", href: "/policies", icon: ScrollText },
+  { label: "Integrações", href: "/integrations", icon: Plug },
 ];
 
 export const footerNav: NavLeaf[] = [{ label: "Configurações", href: "/settings", icon: Settings }];
 
-export const adminNav: NavLeaf = { label: "Admin", href: "/admin", icon: ShieldCheck };
+export const adminNav: NavLeaf = { label: "Administração", href: "/admin", icon: ShieldCheck };

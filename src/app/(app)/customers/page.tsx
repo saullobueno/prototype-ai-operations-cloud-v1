@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { MoreHorizontal, Plus, Search, Users } from "lucide-react";
 import { PageContainer, PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/domain/empty-state";
@@ -9,12 +10,13 @@ import { EntityAvatar } from "@/components/domain/entity-avatar";
 import { HealthBadge } from "@/components/domain/badges";
 import { ClickableTableRow } from "@/components/domain/clickable-table-row";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CustomerFormDialog } from "@/features/customers/customer-form-dialog";
-import { customers, getTicketsByCustomer } from "@/data/mock";
+import { customers, deleteCustomer, getTicketsByCustomer } from "@/data/mock";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { NOW } from "@/lib/time";
 import type { Customer } from "@/types";
@@ -30,6 +32,7 @@ export default function CustomersPage() {
   const [version, setVersion] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
+  const [deleteCandidate, setDeleteCandidate] = useState<Customer | null>(null);
 
   const filtered = useMemo(() => {
     let list = customers;
@@ -125,6 +128,9 @@ export default function CustomersPage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onSelect={() => router.push(`/customers/${customer.id}`)}>Ver perfil</DropdownMenuItem>
                           <DropdownMenuItem onSelect={() => setEditCustomer(customer)}>Editar</DropdownMenuItem>
+                          <DropdownMenuItem variant="destructive" onSelect={() => setDeleteCandidate(customer)}>
+                            Excluir
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -149,6 +155,34 @@ export default function CustomersPage() {
         }}
         onSave={() => setVersion((v) => v + 1)}
       />
+
+      <Dialog open={deleteCandidate !== null} onOpenChange={(next) => !next && setDeleteCandidate(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Excluir cliente?</DialogTitle>
+            <DialogDescription>
+              &ldquo;{deleteCandidate?.name}&rdquo; será removido permanentemente, incluindo o acesso rápido ao seu histórico. Essa ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteCandidate(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (!deleteCandidate) return;
+                deleteCustomer(deleteCandidate.id);
+                toast.success("Cliente excluído", { description: `${deleteCandidate.name} foi removido do workspace.` });
+                setDeleteCandidate(null);
+                setVersion((v) => v + 1);
+              }}
+            >
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageContainer>
   );
 }

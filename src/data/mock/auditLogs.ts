@@ -1,7 +1,8 @@
 import type { AuditLog } from "@/types";
 import { hoursAgo, minutesAgo, daysAgo } from "@/lib/time";
+import { businessAuditLogs } from "./businessAuditLogs";
 
-export const auditLogs: AuditLog[] = [
+const coreAuditLogs: AuditLog[] = [
   { id: "audit_1", actorType: "agent", actorId: "agent_billing", action: "issue_refund", targetType: "payment", targetId: "pay_order_cus_001_0", createdAt: hoursAgo(3.9) },
   { id: "audit_2", actorType: "human", actorId: "usr_maria", action: "update_ticket", targetType: "ticket", targetId: "SUP-1842", createdAt: hoursAgo(3) },
   { id: "audit_3", actorType: "agent", actorId: "agent_support", action: "create_ticket", targetType: "ticket", targetId: "SUP-1845", createdAt: hoursAgo(9) },
@@ -17,3 +18,5 @@ export const auditLogs: AuditLog[] = [
   { id: "audit_13", actorType: "human", actorId: "usr_edivan", action: "update_policy", targetType: "policy", targetId: "policy_refund", createdAt: daysAgo(21) },
   { id: "audit_14", actorType: "agent", actorId: "agent_billing", action: "escalate_conversation", targetType: "conversation", targetId: "conv_1007", createdAt: minutesAgo(90) },
 ];
+
+export const auditLogs: AuditLog[] = [...coreAuditLogs, ...businessAuditLogs];

@@ -17,6 +17,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getCustomerById, getUserById, minutesUntilBreach, tickets } from "@/data/mock";
 import { escalateTicket, resolveTicket } from "@/features/tickets/ticket-actions";
+import { TicketFormDialog } from "@/features/tickets/ticket-form-dialog";
+import type { Ticket } from "@/types";
 
 type FilterTab = "all" | "open" | "unassigned" | "breaching";
 
@@ -27,6 +29,7 @@ export default function TicketsPage() {
   // Espelha o array compartilhado `tickets` em estado local só para forçar o re-render da
   // tabela quando uma ação do menu ("Resolver"/"Escalar") muta um ticket in-place.
   const [version, setVersion] = useState(0);
+  const [editTicket, setEditTicket] = useState<Ticket | null>(null);
 
   const filtered = useMemo(() => {
     let list = [...tickets].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
@@ -111,6 +114,7 @@ export default function TicketsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onSelect={() => router.push(`/tickets/${t.id}`)}>Ver detalhe</DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => setEditTicket(t)}>Editar</DropdownMenuItem>
                           <DropdownMenuItem
                             disabled={isDone}
                             onSelect={() => {
@@ -139,6 +143,17 @@ export default function TicketsPage() {
             </TableBody>
           </Table>
         </div>
+      )}
+
+      {editTicket && (
+        <TicketFormDialog
+          ticket={editTicket}
+          open={editTicket !== null}
+          onOpenChange={(next) => {
+            if (!next) setEditTicket(null);
+          }}
+          onSave={() => setVersion((v) => v + 1)}
+        />
       )}
     </PageContainer>
   );

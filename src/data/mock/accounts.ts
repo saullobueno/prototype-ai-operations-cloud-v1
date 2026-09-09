@@ -251,3 +251,8 @@ export function updateAccount(accountId: string, patch: Partial<Account>) {
   if (account) Object.assign(account, patch);
   return account;
 }
+
+export function deleteAccount(accountId: string) {
+  const idx = accounts.findIndex((a) => a.id === accountId);
+  if (idx !== -1) accounts.splice(idx, 1);
+}

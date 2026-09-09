@@ -23,10 +23,9 @@ export const adminNav = [
   {
     label: "Plataforma",
     items: [
-      { label: "Integrações", href: "/admin/integrations" },
-      { label: "Uso", href: "/admin/usage" },
-      { label: "Faturamento", href: "/admin/billing" },
       { label: "Segurança", href: "/admin/security" },
+      { label: "Faturamento", href: "/admin/billing" },
+      { label: "Uso", href: "/admin/usage" },
       { label: "Status do sistema", href: "/admin/system-health" },
     ],
   },

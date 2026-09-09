@@ -1,10 +1,5 @@
-import { SettingsSection } from "@/components/layout/settings-section";
-import { RolesPanel } from "@/features/organization/roles-panel";
+import { redirect } from "next/navigation";
 
-export default function RolesSettingsPage() {
-  return (
-    <SettingsSection title="Papéis" description="Cada papel agrupa um conjunto de permissões em toda a plataforma.">
-      <RolesPanel />
-    </SettingsSection>
-  );
+export default function SettingsRolesRedirectPage() {
+  redirect("/admin/roles");
 }

@@ -4,6 +4,7 @@ import { use } from "react";
 import { notFound } from "next/navigation";
 import {
   ActivityTab,
+  ContactsTab,
   ConversationsTab,
   FilesTab,
   NotesTab,
@@ -18,6 +19,7 @@ import {
 const TAB_COMPONENTS: Record<string, (props: { customerId: string }) => React.ReactElement> = {
   overview: OverviewTab,
   activity: ActivityTab,
+  contacts: ContactsTab,
   conversations: ConversationsTab,
   tickets: TicketsTab,
   orders: OrdersTab,

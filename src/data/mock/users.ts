@@ -5,6 +5,8 @@ export const users: User[] = [
     id: "usr_edivan",
     name: "Edivan",
     email: "edivan@econform.com.br",
+    phone: "+55 11 90000-0000",
+    bio: "Fundador e responsável pela operação do AI Operations Cloud.",
     roleId: "role_owner",
     teamIds: ["team_platform"],
     status: "active",
@@ -60,3 +62,20 @@ export const users: User[] = [
 ];
 
 export const CURRENT_USER_ID = "usr_edivan";
+
+// Persistência simplificada, mesmo padrão de tasks.ts: as telas de administração de usuários
+// (/admin/users) mutam este array compartilhado para que o efeito sobreviva à navegação dentro
+// da sessão — não sobrevive a um reload.
+export function addUser(user: User) {
+  users.push(user);
+}
+
+export function updateUser(updated: User) {
+  const idx = users.findIndex((u) => u.id === updated.id);
+  if (idx !== -1) users[idx] = updated;
+}
+
+export function deleteUser(id: string) {
+  const idx = users.findIndex((u) => u.id === id);
+  if (idx !== -1) users.splice(idx, 1);
+}

@@ -3,19 +3,31 @@
 import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { AlertTriangle, BookOpen, Plus } from "lucide-react";
+import { AlertTriangle, BookOpen, MoreHorizontal, Plus } from "lucide-react";
 import { PageContainer, PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/domain/empty-state";
 import { StatusBadge } from "@/components/domain/badges";
 import { HealthMeterRow } from "@/components/domain/health-meter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ClickableTableRow } from "@/components/domain/clickable-table-row";
 import { CreateArticleDialog } from "@/features/knowledge/create-article-dialog";
-import { knowledgeDocuments as knowledgeDocumentsStore, knowledgeSources } from "@/data/mock";
+import { KnowledgeDocumentFormDialog } from "@/features/knowledge/knowledge-document-form-dialog";
+import { KnowledgeSourceFormDialog } from "@/features/knowledge/knowledge-source-form-dialog";
+import { deleteKnowledgeDocument, deleteKnowledgeSource, knowledgeDocuments as knowledgeDocumentsStore, knowledgeSources } from "@/data/mock";
 import { formatRelative } from "@/lib/format";
+import type { KnowledgeDocument, KnowledgeSource } from "@/types";
 
 const MISSING_TOPICS = ["Exceções da política de reembolso", "Faturamento multi-moeda", "Mapeamento de grupos de SSO empresarial", "Limites de exportação em massa"];
 
@@ -23,19 +35,12 @@ export default function KnowledgePage() {
   const [sources, setSources] = useState(knowledgeSources);
   const [knowledgeDocuments, setKnowledgeDocuments] = useState(knowledgeDocumentsStore);
   const [articleTopic, setArticleTopic] = useState<string | null>(null);
+  const [createSourceOpen, setCreateSourceOpen] = useState(false);
+  const [editSource, setEditSource] = useState<KnowledgeSource | null>(null);
+  const [deleteSourceCandidate, setDeleteSourceCandidate] = useState<KnowledgeSource | null>(null);
+  const [editDoc, setEditDoc] = useState<KnowledgeDocument | null>(null);
+  const [deleteDocCandidate, setDeleteDocCandidate] = useState<KnowledgeDocument | null>(null);
   const collections = Array.from(new Set(knowledgeDocuments.map((d) => d.collection).filter(Boolean))) as string[];
-
-  function addSource() {
-    setSources((prev) => [
-      { id: `ks_${Date.now()}`, type: "manual", name: "Nova fonte", syncStatus: "syncing" },
-      ...prev,
-    ]);
-    toast("Conectando fonte...");
-    window.setTimeout(() => {
-      setSources((prev) => prev.map((s, i) => (i === 0 ? { ...s, syncStatus: "synced", lastSyncedAt: new Date().toISOString() } : s)));
-      toast.success("Fonte conectada");
-    }, 1200);
-  }
 
   return (
     <PageContainer>
@@ -67,7 +72,7 @@ export default function KnowledgePage() {
             <TabsTrigger value="sync">Sincronização</TabsTrigger>
             <TabsTrigger value="readiness">AI Readiness</TabsTrigger>
           </TabsList>
-          <Button size="sm" onClick={addSource}><Plus /> Adicionar fonte</Button>
+          <Button size="sm" onClick={() => setCreateSourceOpen(true)}><Plus /> Adicionar fonte</Button>
         </div>
 
         <TabsContent value="sources">
@@ -82,6 +87,7 @@ export default function KnowledgePage() {
                     <TableHead>Tipo</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Última sincronização</TableHead>
+                    <TableHead className="w-10" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -91,6 +97,22 @@ export default function KnowledgePage() {
                       <TableCell className="uppercase text-muted-foreground">{s.type.replace("_", " ")}</TableCell>
                       <TableCell><StatusBadge status={s.syncStatus} /></TableCell>
                       <TableCell className="text-muted-foreground">{s.lastSyncedAt ? formatRelative(s.lastSyncedAt) : "—"}</TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon-xs">
+                              <MoreHorizontal />
+                              <span className="sr-only">Ações da fonte</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onSelect={() => setEditSource(s)}>Editar</DropdownMenuItem>
+                            <DropdownMenuItem variant="destructive" onSelect={() => setDeleteSourceCandidate(s)}>
+                              Remover fonte
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -108,6 +130,7 @@ export default function KnowledgePage() {
                   <TableHead>Status</TableHead>
                   <TableHead>Confiança</TableHead>
                   <TableHead>Atualizado</TableHead>
+                  <TableHead className="w-10" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -117,6 +140,22 @@ export default function KnowledgePage() {
                     <TableCell><StatusBadge status={d.status} /></TableCell>
                     <TableCell>{d.confidence}%</TableCell>
                     <TableCell className="text-muted-foreground">{formatRelative(d.updatedAt)}</TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon-xs">
+                            <MoreHorizontal />
+                            <span className="sr-only">Ações do documento</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onSelect={() => setEditDoc(d)}>Editar</DropdownMenuItem>
+                          <DropdownMenuItem variant="destructive" onSelect={() => setDeleteDocCandidate(d)}>
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
                   </ClickableTableRow>
                 ))}
               </TableBody>
@@ -192,6 +231,89 @@ export default function KnowledgePage() {
         }}
         onCreated={(doc) => setKnowledgeDocuments((prev) => [doc, ...prev])}
       />
+
+      <KnowledgeSourceFormDialog
+        open={createSourceOpen}
+        onOpenChange={setCreateSourceOpen}
+        onSave={(created) => setSources((prev) => [created, ...prev])}
+      />
+      {editSource && (
+        <KnowledgeSourceFormDialog
+          source={editSource}
+          open={editSource !== null}
+          onOpenChange={(next) => {
+            if (!next) setEditSource(null);
+          }}
+          onSave={(updated) => setSources((prev) => prev.map((s) => (s.id === updated.id ? updated : s)))}
+        />
+      )}
+
+      {editDoc && (
+        <KnowledgeDocumentFormDialog
+          doc={editDoc}
+          open={editDoc !== null}
+          onOpenChange={(next) => {
+            if (!next) setEditDoc(null);
+          }}
+          onSave={(updated) => setKnowledgeDocuments((prev) => prev.map((d) => (d.id === updated.id ? updated : d)))}
+        />
+      )}
+
+      <Dialog open={deleteSourceCandidate !== null} onOpenChange={(next) => !next && setDeleteSourceCandidate(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Remover fonte?</DialogTitle>
+            <DialogDescription>
+              &ldquo;{deleteSourceCandidate?.name}&rdquo; será desconectada e os documentos vinculados a ela deixarão de ser sincronizados. Essa ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteSourceCandidate(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (!deleteSourceCandidate) return;
+                deleteKnowledgeSource(deleteSourceCandidate.id);
+                setSources((prev) => prev.filter((s) => s.id !== deleteSourceCandidate.id));
+                toast.success("Fonte removida");
+                setDeleteSourceCandidate(null);
+              }}
+            >
+              Remover
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteDocCandidate !== null} onOpenChange={(next) => !next && setDeleteDocCandidate(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Excluir documento?</DialogTitle>
+            <DialogDescription>
+              &ldquo;{deleteDocCandidate?.title}&rdquo; será removido permanentemente da base de conhecimento. Essa ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDocCandidate(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (!deleteDocCandidate) return;
+                deleteKnowledgeDocument(deleteDocCandidate.id);
+                setKnowledgeDocuments((prev) => prev.filter((d) => d.id !== deleteDocCandidate.id));
+                toast.success("Documento excluído");
+                setDeleteDocCandidate(null);
+              }}
+            >
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageContainer>
   );
 }

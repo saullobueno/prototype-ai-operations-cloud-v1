@@ -291,6 +291,18 @@ export const interactions: Interaction[] = [
   },
 ];
 
+// Persistência simplificada, mesmo padrão de src/data/mock/customers.ts. Usado quando um
+// vendedor registra manualmente uma interação (a IA continua sendo a fonte das que já vêm
+// com aiAnalysis, geradas por integrações de email/calendário simuladas nos dados iniciais).
+export function addInteraction(interaction: Interaction) {
+  interactions.push(interaction);
+}
+
+export function deleteInteraction(interactionId: string) {
+  const idx = interactions.findIndex((i) => i.id === interactionId);
+  if (idx !== -1) interactions.splice(idx, 1);
+}
+
 export function getInteractionsByAccount(accountId: string): Interaction[] {
   return interactions
     .filter((i) => i.accountId === accountId)

@@ -176,6 +176,13 @@ export const signals: Signal[] = [
   },
 ];
 
+// Signals são detectados pela IA — não são criáveis manualmente, mas podem ser descartados
+// pelo vendedor quando não são mais relevantes (ex: já endereçados fora do sistema).
+export function deleteSignal(signalId: string) {
+  const idx = signals.findIndex((s) => s.id === signalId);
+  if (idx !== -1) signals.splice(idx, 1);
+}
+
 export function getSignalsByAccount(accountId: string): Signal[] {
   return signals
     .filter((s) => s.accountId === accountId)

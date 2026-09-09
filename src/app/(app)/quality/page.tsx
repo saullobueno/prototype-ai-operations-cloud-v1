@@ -1,20 +1,26 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { BadgeCheck } from "lucide-react";
 import { PageContainer, PageHeader } from "@/components/layout/page-header";
 import { KPIStatCard } from "@/components/domain/kpi-stat-card";
 import { EntityAvatar } from "@/components/domain/entity-avatar";
 import { EmptyState } from "@/components/domain/empty-state";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { avg, evaluations, getUserById, users } from "@/data/mock";
+import { avg, evaluations, getUserById, resolveEvaluation, users, CURRENT_USER_ID } from "@/data/mock";
 
 const TARGET_TYPE_LABEL: Record<string, string> = { agent_run: "execução de agente", conversation: "conversa" };
 const RESOLUTION_LABEL: Record<string, string> = { resolved: "Resolvido", escalated: "Escalado", unresolved: "Não resolvido" };
 
 export default function QualityPage() {
+  // Espelha o array compartilhado `evaluations` em estado local só para forçar o re-render
+  // quando uma revisão pendente é marcada como concluída (mesma referência mutada).
+  const [, setVersion] = useState(0);
   const aiEvals = evaluations.filter((e) => e.targetType === "agent_run");
   const humanEvals = evaluations.filter((e) => e.targetType === "conversation");
   const pendingReviews = humanEvals.filter((e) => e.resolution === "unresolved");
@@ -72,9 +78,24 @@ export default function QualityPage() {
           ) : (
             <div className="space-y-2">
               {pendingReviews.map((e) => (
-                <Card key={e.id} className="flex-row items-center justify-between px-4 py-3">
-                  <span className="text-sm text-foreground">Conversa {e.targetId} sinalizada para revisão</span>
-                  <span className="text-xs text-muted-foreground">Precisão {e.accuracy}%</span>
+                <Card key={e.id} className="flex-row items-center justify-between gap-3 px-4 py-3">
+                  <div>
+                    <Link href={`/inbox/${e.targetId}`} className="text-sm text-foreground hover:underline">
+                      Conversa {e.targetId} sinalizada para revisão
+                    </Link>
+                    <p className="text-xs text-muted-foreground">Precisão {e.accuracy}% · Tom {e.tone}%</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      resolveEvaluation(e.id, CURRENT_USER_ID);
+                      setVersion((v) => v + 1);
+                      toast.success("Revisão marcada como concluída");
+                    }}
+                  >
+                    Marcar como revisado
+                  </Button>
                 </Card>
               ))}
             </div>

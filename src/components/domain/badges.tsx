@@ -77,6 +77,9 @@ const STATUS_MAP: Record<string, { label: string; className: string }> = {
   sent: { label: "Enviada", className: "bg-info/15 text-info" },
   viewed: { label: "Visualizada", className: "bg-violet-500/15 text-violet-600 dark:text-violet-400" },
   accepted: { label: "Aceita", className: "bg-success/15 text-success dark:text-success" },
+  // ---------- Approval ----------
+  expired: { label: "Expirada", className: "bg-muted text-muted-foreground" },
+  cancelled: { label: "Cancelada", className: "bg-muted text-muted-foreground" },
 };
 
 export function StatusBadge({ status }: { status: string }) {

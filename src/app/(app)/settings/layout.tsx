@@ -4,7 +4,7 @@ import { settingsNav } from "@/components/navigation/settings-nav-config";
 
 export default function SettingsLayout({ children }: { children: ReactNode }) {
   return (
-    <SecondarySidebarLayout title="Settings" groups={settingsNav}>
+    <SecondarySidebarLayout title="Configurações" groups={settingsNav}>
       {children}
     </SecondarySidebarLayout>
   );

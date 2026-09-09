@@ -26,6 +26,8 @@ export interface User {
   name: string;
   email: string;
   avatarUrl?: string;
+  phone?: string;
+  bio?: string;
   roleId: string;
   teamIds: string[];
   status: "active" | "invited" | "suspended";
@@ -39,7 +41,10 @@ export interface Team {
 
 export interface Role {
   id: string;
-  name: RoleName;
+  // RoleName cobre os 5 papéis de sistema (usados no ranking de RBAC visual em
+  // src/core/permissions); o `& {}` preserva o autocomplete desses literais mas ainda aceita
+  // qualquer string, para permitir papéis customizados criados em /admin/roles.
+  name: RoleName | (string & {});
   permissionIds: string[];
 }
 
@@ -94,6 +99,19 @@ export interface Payment {
   amountCents: number;
   status: "completed" | "failed" | "refunded";
   method: string;
+  createdAt: string;
+}
+
+export type VendorStatus = "active" | "pending_approval" | "inactive";
+
+export interface Vendor {
+  id: string;
+  name: string;
+  category: string;
+  status: VendorStatus;
+  contactEmail?: string;
+  taxId?: string;
+  onboardedAt?: string;
   createdAt: string;
 }
 
@@ -166,7 +184,20 @@ export interface SLA {
 export interface Task {
   id: string;
   title: string;
-  relatedType: "customer" | "ticket" | "conversation" | "workflow" | "lead" | "account" | "deal";
+  relatedType:
+    | "customer"
+    | "ticket"
+    | "conversation"
+    | "workflow"
+    | "lead"
+    | "account"
+    | "deal"
+    | "process"
+    | "process_run"
+    | "invoice"
+    | "vendor"
+    | "employee"
+    | "candidate";
   relatedId: string;
   assigneeId: string;
   status: "new" | "todo" | "in_progress" | "review" | "done" | "canceled";
@@ -194,7 +225,12 @@ export interface Event {
 // ---------- AI / Agents ----------
 
 /** Módulo dono do recurso. Ausente = Platform Core / Customer Operations (v1). */
-export type ModuleKey = "customer_operations" | "sales_operations";
+export type ModuleKey =
+  | "customer_operations"
+  | "sales_operations"
+  | "business_operations"
+  | "finance_operations"
+  | "people_operations";
 
 export interface Tool {
   id: string;
@@ -308,6 +344,10 @@ export interface Workflow {
   failedRuns: number;
   waitingRuns: number;
   module?: ModuleKey;
+  /** Workflow reutilizável exibido em Automation > Modelos, usado como ponto de partida em vez de um canvas em branco. */
+  isTemplate?: boolean;
+  /** Categoria de exibição para modelos (ex.: "Suporte", "Billing"). Só relevante quando isTemplate é true. */
+  templateCategory?: string;
 }
 
 export type WorkflowNodeType =
@@ -426,7 +466,18 @@ export interface Notification {
 
 // ---------- Governance ----------
 
-export type ApprovalType = "refund" | "account_deletion" | "subscription_change" | "escalation";
+export type ApprovalType =
+  | "refund"
+  | "account_deletion"
+  | "subscription_change"
+  | "escalation"
+  | "vendor_onboarding"
+  | "bill_payment"
+  | "expense"
+  | "purchase_order"
+  | "time_off"
+  | "hiring"
+  | "process_exception";
 
 export interface Approval {
   id: string;
@@ -434,13 +485,19 @@ export interface Approval {
   requestedById: string;
   type: ApprovalType;
   amountCents?: number;
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "expired" | "cancelled";
   approverId?: string;
   createdAt: string;
+  deadline?: string;
   context?: string;
   customerId?: string;
   /** Vincula esta aprovação ao AgentRun que a originou (quando aplicável). */
   runId?: string;
+  /** Módulo de origem — ausente = Customer Operations (v1, comportamento legado). */
+  module?: ModuleKey;
+  /** Entidade que originou o pedido de aprovação (process run, bill, invoice, employee request...). */
+  relatedType?: string;
+  relatedId?: string;
 }
 
 export interface AuditLog {
@@ -594,4 +651,328 @@ export interface Proposal {
   status: ProposalStatus;
   valueCents: number;
   sentAt?: string;
+}
+
+// ---------- Business Operations ----------
+// Domínio de BPM / orquestração de processos. Reusa Task, Approval, Policy, Workflow, Agent do core.
+// `BusinessProcess` é a definição reusável; `ProcessRun` é uma execução concreta (ex.: "Vendor Onboarding" rodando para um vendor específico).
+
+export type BusinessProcessCategory = "procurement" | "onboarding" | "compliance" | "operations" | "finance" | "hr";
+export type BusinessProcessStatus = "active" | "paused" | "draft";
+
+export interface BusinessProcess {
+  id: string;
+  name: string;
+  description: string;
+  category: BusinessProcessCategory;
+  status: BusinessProcessStatus;
+  ownerId: string;
+  /** Workflow (Automation) que implementa este processo, quando modelado como canvas. */
+  workflowId?: string;
+  slaHours?: number;
+  totalRuns: number;
+  activeRuns: number;
+  avgDurationHours: number;
+  exceptionRate: number; // 0-100
+  automationRate: number; // 0-100
+  createdAt: string;
+}
+
+export interface ProcessStage {
+  id: string;
+  processId: string;
+  name: string;
+  order: number;
+}
+
+export type ProcessStepStatus = "pending" | "in_progress" | "completed" | "blocked" | "skipped";
+export type ProcessRunStatus = "running" | "completed" | "exception" | "waiting_approval";
+
+export interface ProcessRunStep {
+  stageId: string;
+  label: string;
+  status: ProcessStepStatus;
+  ownerType: "human" | "agent" | "system";
+  ownerId?: string;
+  startedAt?: string;
+  completedAt?: string;
+  detail?: string;
+}
+
+export interface ProcessRun {
+  id: string;
+  processId: string;
+  /** Descrição legível do que está rodando, ex.: "Vendor: Nordic Supplies AB". */
+  subject: string;
+  status: ProcessRunStatus;
+  steps: ProcessRunStep[];
+  startedAt: string;
+  completedAt?: string;
+  relatedType?: string;
+  relatedId?: string;
+}
+
+export type OperationalCaseStatus = "open" | "in_progress" | "resolved";
+
+export interface OperationalCase {
+  id: string;
+  title: string;
+  processId?: string;
+  processRunId?: string;
+  status: OperationalCaseStatus;
+  severity: RiskLevel;
+  assigneeId?: string;
+  createdAt: string;
+  resolvedAt?: string;
+}
+
+export interface ProcessException {
+  id: string;
+  processId: string;
+  processRunId: string;
+  stageId?: string;
+  reason: string;
+  severity: RiskLevel;
+  status: "open" | "resolved";
+  createdAt: string;
+}
+
+export interface Escalation {
+  id: string;
+  processRunId?: string;
+  reason: string;
+  escalatedToId: string;
+  status: "pending" | "acknowledged" | "resolved";
+  createdAt: string;
+}
+
+export interface SOP {
+  id: string;
+  processId: string;
+  title: string;
+  content: string;
+  updatedAt: string;
+}
+
+// ---------- Finance Operations ----------
+// Reusa Customer (receivables) e Vendor (payables, core) — não reimplementa um ERP completo.
+
+export type InvoiceStatus = "draft" | "sent" | "viewed" | "paid" | "overdue" | "void";
+
+export interface InvoiceLineItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unitAmountCents: number;
+}
+
+export interface Invoice {
+  id: string;
+  number: string;
+  customerId: string;
+  status: InvoiceStatus;
+  amountCents: number;
+  lineItems: InvoiceLineItem[];
+  issueDate: string;
+  dueDate: string;
+  paidAt?: string;
+  daysOverdue?: number;
+  riskLevel?: RiskLevel;
+  riskReasons?: string[];
+}
+
+export type TransactionType = "charge" | "refund" | "payout" | "adjustment";
+
+export interface Transaction {
+  id: string;
+  type: TransactionType;
+  invoiceId?: string;
+  amountCents: number;
+  status: "completed" | "failed" | "pending";
+  createdAt: string;
+}
+
+export type BillStatus = "pending_approval" | "approved" | "paid" | "rejected";
+
+export interface Bill {
+  id: string;
+  vendorId: string;
+  amountCents: number;
+  status: BillStatus;
+  dueDate: string;
+  approvalId?: string;
+  createdAt: string;
+}
+
+export type ExpenseCategory = "software" | "travel" | "office" | "marketing" | "other";
+
+export interface Expense {
+  id: string;
+  vendorId?: string;
+  category: ExpenseCategory;
+  amountCents: number;
+  submittedById: string;
+  status: "pending" | "approved" | "rejected" | "flagged";
+  anomalyReason?: string;
+  createdAt: string;
+}
+
+export interface Budget {
+  id: string;
+  name: string;
+  category: ExpenseCategory;
+  periodStart: string;
+  periodEnd: string;
+  allocatedCents: number;
+  spentCents: number;
+}
+
+export type CollectionCaseStatus = "monitoring" | "contacted" | "escalated" | "resolved";
+
+export interface CollectionCase {
+  id: string;
+  invoiceId: string;
+  customerId: string;
+  status: CollectionCaseStatus;
+  strategy: string;
+  agentId?: string;
+  createdAt: string;
+}
+
+export interface Reconciliation {
+  id: string;
+  period: string;
+  matchedCents: number;
+  unmatchedCents: number;
+  mismatches: number;
+  status: "balanced" | "discrepancy";
+}
+
+export interface CashFlowForecastPoint {
+  horizonDays: 30 | 60 | 90;
+  projectedInflowCents: number;
+  projectedOutflowCents: number;
+  netCents: number;
+}
+
+export type FinancialAnomalyType =
+  | "duplicate_payment"
+  | "unusual_expense"
+  | "unexpected_amount"
+  | "vendor_anomaly"
+  | "reconciliation_mismatch";
+
+export interface FinancialAnomaly {
+  id: string;
+  type: FinancialAnomalyType;
+  relatedType: "invoice" | "expense" | "bill" | "transaction";
+  relatedId: string;
+  detail: string;
+  amountCents?: number;
+  detectedAt: string;
+  status: "open" | "dismissed" | "confirmed";
+}
+
+// ---------- People Operations ----------
+// `Employee` é o sujeito de RH — distinto de `User` (conta/seat da plataforma). Um Employee pode ou não ter um User vinculado.
+
+export type EmploymentStatus = "active" | "onboarding" | "on_leave" | "offboarding" | "terminated";
+
+export interface Department {
+  id: string;
+  name: string;
+  headId?: string;
+}
+
+export interface Employee {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl?: string;
+  title: string;
+  departmentId: string;
+  managerId?: string;
+  status: EmploymentStatus;
+  startDate: string;
+  location?: string;
+}
+
+export type CandidateStage = "applied" | "screening" | "interview" | "offer" | "hired" | "rejected";
+
+export interface Candidate {
+  id: string;
+  name: string;
+  role: string;
+  stage: CandidateStage;
+  appliedAt: string;
+}
+
+export type OnboardingStepStatus = "pending" | "in_progress" | "done" | "blocked";
+
+export interface OnboardingStep {
+  id: string;
+  label: string;
+  status: OnboardingStepStatus;
+  ownerType: "human" | "agent" | "system";
+  completedAt?: string;
+}
+
+export interface Onboarding {
+  id: string;
+  employeeId: string;
+  status: "in_progress" | "completed" | "delayed";
+  steps: OnboardingStep[];
+  startedAt: string;
+  completedAt?: string;
+}
+
+export interface Offboarding {
+  id: string;
+  employeeId: string;
+  status: "in_progress" | "completed";
+  lastDay: string;
+}
+
+export interface Goal {
+  id: string;
+  employeeId: string;
+  title: string;
+  progress: number; // 0-100
+  status: "on_track" | "at_risk" | "achieved";
+  dueDate: string;
+}
+
+export type ReviewStatus = "scheduled" | "in_progress" | "completed";
+
+export interface PerformanceReview {
+  id: string;
+  employeeId: string;
+  cycle: string;
+  status: ReviewStatus;
+  rating?: number;
+}
+
+export interface PeopleFeedback {
+  id: string;
+  employeeId: string;
+  fromId: string;
+  body: string;
+  createdAt: string;
+}
+
+export type PeopleRequestType = "time_off" | "equipment" | "expense" | "internal_mobility" | "document";
+
+export interface PeopleRequest {
+  id: string;
+  employeeId: string;
+  type: PeopleRequestType;
+  status: "pending" | "approved" | "rejected";
+  approvalId?: string;
+  createdAt: string;
+}
+
+export interface RetentionRisk {
+  employeeId: string;
+  riskLevel: RiskLevel;
+  reasons: string[];
 }

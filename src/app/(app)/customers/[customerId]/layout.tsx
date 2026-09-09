@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 const TABS = [
   { slug: "overview", label: "Visão geral" },
   { slug: "activity", label: "Atividade" },
+  { slug: "contacts", label: "Contatos" },
   { slug: "conversations", label: "Conversas" },
   { slug: "tickets", label: "Tickets" },
   { slug: "orders", label: "Pedidos" },

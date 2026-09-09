@@ -1,7 +1,9 @@
 import type { Task } from "@/types";
 import { daysAgo, hoursAgo } from "@/lib/time";
+import { businessTasks } from "./businessTasks";
+import { peopleTasks } from "./peopleTasks";
 
-export const tasks: Task[] = [
+const coreTasks: Task[] = [
   { id: "task_1", title: "Fazer follow-up da aprovação de reembolso", relatedType: "customer", relatedId: "cus_007", assigneeId: "usr_maria", status: "todo", dueAt: hoursAgo(-4) },
   { id: "task_2", title: "Agendar ligação de retenção", relatedType: "customer", relatedId: "cus_012", assigneeId: "usr_sofia", status: "in_progress", dueAt: daysAgo(-1) },
   { id: "task_3", title: "Verificar correção do mapeamento de domínio do SSO", relatedType: "ticket", relatedId: "SUP-1849", assigneeId: "usr_pedro", status: "review" },
@@ -10,6 +12,8 @@ export const tasks: Task[] = [
   { id: "task_6", title: "Publicar artigo atualizado de exceções de reembolso", relatedType: "workflow", relatedId: "wf_refund_approval", assigneeId: "usr_thomas", status: "new" },
   { id: "task_7", title: "Migrar automação antiga de resposta de SLA", relatedType: "workflow", relatedId: "wf_refund_approval", assigneeId: "usr_thomas", status: "canceled" },
 ];
+
+export const tasks: Task[] = [...coreTasks, ...businessTasks, ...peopleTasks];
 
 // Persistência simplificada: as 3 telas que criam/editam/excluem tasks (página /tasks, aba
 // Tasks do Customer 360, aba Tasks do Ticket) mutam este mesmo array compartilhado através

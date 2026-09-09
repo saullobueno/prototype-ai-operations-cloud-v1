@@ -11,7 +11,7 @@ export function Sidebar() {
     <aside
       className={cn(
         "sticky top-0 hidden h-svh shrink-0 border-r border-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 md:block",
-        collapsed ? "w-16" : "w-64"
+        collapsed ? "w-16" : "w-[306px]"
       )}
     >
       <SidebarNav collapsed={collapsed} />

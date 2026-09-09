@@ -315,6 +315,16 @@ export function addTicket(ticket: Ticket) {
   tickets.push(ticket);
 }
 
+export function updateTicket(ticketId: string, patch: Partial<Ticket>) {
+  const ticket = tickets.find((t) => t.id === ticketId);
+  if (ticket) Object.assign(ticket, patch);
+  return ticket;
+}
+
+// Não há deleteTicket propositalmente: tickets são registros de suporte auditáveis — o fluxo
+// correto para "removê-los" da fila é resolver/fechar (ver ticket-actions.ts), não excluir o
+// histórico. Ver docs/06-fluxos-e-ai-moments.md.
+
 /** Próximo ID sequencial no padrão "SUP-XXXX" usado por todos os tickets do mock. */
 export function nextTicketId(): string {
   const nums = tickets

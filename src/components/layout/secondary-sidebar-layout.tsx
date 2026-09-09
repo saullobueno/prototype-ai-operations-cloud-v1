@@ -17,11 +17,11 @@ export function SecondarySidebarLayout({ title, groups, children }: { title: str
     <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 px-4 py-6 md:flex-row md:px-6">
       <aside className="shrink-0 md:w-56">
         <p className="mb-3 px-2 text-lg font-semibold tracking-tight text-foreground">{title}</p>
-        <nav className="space-y-4">
+        <nav className="space-y-6">
           {groups.map((group) => (
             <div key={group.label}>
-              <p className="mb-1 px-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{group.label}</p>
-              <div className="space-y-0.5">
+              <p className="mb-1 px-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/50">{group.label}</p>
+              <div className="space-y-0">
                 {group.items.map((item) => {
                   const active = pathname === item.href;
                   return (
@@ -29,7 +29,7 @@ export function SecondarySidebarLayout({ title, groups, children }: { title: str
                       key={item.href}
                       href={item.href}
                       className={cn(
-                        "block rounded-md px-2 py-1.5 text-sm transition-colors",
+                        "block rounded-md px-2 py-1 text-sm transition-colors",
                         active ? "bg-primary/10 font-medium text-primary" : "text-muted-foreground hover:bg-accent hover:text-foreground"
                       )}
                     >

@@ -14,15 +14,6 @@ export const settingsNav: SettingsGroup[] = [
     ],
   },
   {
-    label: "Organização",
-    items: [
-      { label: "Times", href: "/settings/teams" },
-      { label: "Usuários", href: "/settings/users" },
-      { label: "Papéis", href: "/settings/roles" },
-      { label: "Permissões", href: "/settings/permissions" },
-    ],
-  },
-  {
     label: "Customer Operations",
     items: [{ label: "Atribuição, SLA, tags e campos", href: "/settings/customer-operations" }],
   },
@@ -34,9 +25,7 @@ export const settingsNav: SettingsGroup[] = [
     label: "Plataforma",
     items: [
       { label: "Canais", href: "/settings/channels" },
-      { label: "Integrações", href: "/settings/integrations" },
       { label: "Segurança", href: "/settings/security" },
-      { label: "Faturamento", href: "/settings/billing" },
     ],
   },
 ];

@@ -103,3 +103,10 @@ export const workflowVersions: WorkflowVersion[] = [
 export function getWorkflowVersion(id: string): WorkflowVersion | undefined {
   return workflowVersions.find((v) => v.id === id);
 }
+
+// Cria ou substitui a versão publicada de um workflow (usado pelo WorkflowBuilder ao publicar).
+export function upsertWorkflowVersion(version: WorkflowVersion) {
+  const idx = workflowVersions.findIndex((v) => v.id === version.id);
+  if (idx !== -1) workflowVersions[idx] = version;
+  else workflowVersions.push(version);
+}

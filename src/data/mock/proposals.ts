@@ -17,3 +17,16 @@ export const proposals: Proposal[] = [
 export function getProposalByDeal(dealId: string): Proposal | undefined {
   return proposals.find((p) => p.dealId === dealId);
 }
+
+// Persistência simplificada, mesmo padrão de src/data/mock/customers.ts. Uma proposta nasce
+// de uma ação do vendedor no deal ("Gerar proposta") e depois avança de status conforme o
+// ciclo comercial (enviada -> visualizada -> aceita/rejeitada).
+export function addProposal(proposal: Proposal) {
+  proposals.push(proposal);
+}
+
+export function updateProposal(proposalId: string, patch: Partial<Proposal>) {
+  const proposal = proposals.find((p) => p.id === proposalId);
+  if (proposal) Object.assign(proposal, patch);
+  return proposal;
+}

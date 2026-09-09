@@ -1,6 +1,9 @@
 import type { Agent } from "@/types";
+import { financeAgents } from "./financeAgents";
+import { businessAgents } from "./businessAgents";
+import { peopleAgents } from "./peopleAgents";
 
-export const agents: Agent[] = [
+const coreAgents: Agent[] = [
   {
     id: "agent_triage",
     name: "Triage Agent",
@@ -127,3 +130,22 @@ export const agents: Agent[] = [
     module: "sales_operations",
   },
 ];
+
+export const agents: Agent[] = [...coreAgents, ...financeAgents, ...businessAgents, ...peopleAgents];
+
+// Persistência simplificada, mesmo padrão de tasks.ts: as telas de criação/edição de agentes
+// (/ai/agents/new, /ai/agents/[agentId]/edit) mutam este array compartilhado para que o efeito
+// sobreviva à navegação dentro da sessão — não sobrevive a um reload.
+export function addAgent(agent: Agent) {
+  agents.push(agent);
+}
+
+export function updateAgent(updated: Agent) {
+  const idx = agents.findIndex((a) => a.id === updated.id);
+  if (idx !== -1) agents[idx] = updated;
+}
+
+export function deleteAgent(id: string) {
+  const idx = agents.findIndex((a) => a.id === id);
+  if (idx !== -1) agents.splice(idx, 1);
+}
